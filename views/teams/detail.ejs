@@ -1,0 +1,73 @@
+<%- include('../partials/header', { title: team.name, user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1><%= team.name %></h1>
+      <span class="badge badge-type-<%= team.type %>">
+        <%= team.type === 'male' ? 'Nam' : team.type === 'female' ? 'Nữ' : 'Hỗn hợp' %>
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-main">
+      <div class="card">
+        <h2 class="card-title">Thành viên</h2>
+        <div class="team-members-list">
+          <% if (team.members) { team.members.forEach(function(m) { %>
+            <div class="team-member-row">
+              <img src="/avatars/<%= m.avatar || 'default.png' %>" alt="" class="user-avatar-sm">
+              <div class="team-member-info">
+                <span class="team-member-name"><%= m.fullName || m.username %></span>
+                <% if (m.isCaptain) { %><span class="badge badge-captain">Đội trưởng</span><% } %>
+              </div>
+              <span class="badge badge-<%= m.status || 'active' %>">
+                <%= m.status === 'pending' ? 'Chờ xác nhận' : 'Đã tham gia' %>
+              </span>
+            </div>
+          <% }); } %>
+        </div>
+      </div>
+
+      <div class="card mt-2">
+        <h2 class="card-title">Lịch sử thách đấu</h2>
+        <% if (typeof challenges !== 'undefined' && challenges.length > 0) { %>
+          <div class="challenge-history">
+            <% challenges.forEach(function(c) { %>
+              <a href="/challenges/<%= c._id || c.id %>" class="challenge-card-mini">
+                <div class="challenge-teams">
+                  <span class="team-name"><%= c.challengerTeam %></span>
+                  <span class="vs">VS</span>
+                  <span class="team-name"><%= c.challengedTeam %></span>
+                </div>
+                <div class="challenge-meta">
+                  <span class="badge badge-<%= c.status %>"><%= c.statusText %></span>
+                  <% if (c.score) { %><span class="challenge-score"><%= c.score %></span><% } %>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="text-muted">Chưa có trận đấu nào.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="detail-sidebar">
+      <div class="card">
+        <h3 class="card-title">Thông tin đội</h3>
+        <dl class="info-list">
+          <dt>Đội trưởng</dt>
+          <dd><%= team.captain ? (team.captain.fullName || team.captain.username) : 'N/A' %></dd>
+          <dt>Loại</dt>
+          <dd><%= team.type === 'male' ? 'Nam' : team.type === 'female' ? 'Nữ' : 'Hỗn hợp' %></dd>
+          <dt>Trạng thái</dt>
+          <dd><span class="badge badge-<%= team.status || 'active' %>"><%= team.status === 'active' ? 'Hoạt động' : 'Chờ duyệt' %></span></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

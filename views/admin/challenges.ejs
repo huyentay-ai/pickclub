@@ -1,0 +1,219 @@
+<%- include('../partials/header', { title: 'Quản lý thách đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>⚔️ Quản lý thách đấu</h1>
+      <a href="/admin" class="btn btn-outline btn-sm" style="margin-top:0.5rem">← Quản trị</a>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <form action="/admin/challenges/send" method="POST">
+        <button type="submit" class="btn btn-outline" onclick="return confirm('Gửi thông báo kết quả hôm nay vào nhóm Zalo?')">📤 Send</button>
+      </form>
+      <button type="button" class="btn btn-primary" onclick="openCreateChallengeModal()">+ Tạo thách đấu nhanh</button>
+    </div>
+  </div>
+
+  <div class="admin-filters">
+    <a href="/admin/challenges" class="btn btn-sm <%= filter === 'all' ? 'btn-primary' : 'btn-outline' %>">Tất cả</a>
+    <a href="/admin/challenges?status=pending" class="btn btn-sm <%= filter === 'pending' ? 'btn-primary' : 'btn-outline' %>">Chờ duyệt</a>
+    <a href="/admin/challenges?status=accepted" class="btn btn-sm <%= filter === 'accepted' ? 'btn-primary' : 'btn-outline' %>">Đã nhận</a>
+    <a href="/admin/challenges?status=completed" class="btn btn-sm <%= filter === 'completed' ? 'btn-primary' : 'btn-outline' %>">Hoàn thành</a>
+    <a href="/admin/challenges?status=disputed" class="btn btn-sm <%= filter === 'disputed' ? 'btn-primary' : 'btn-outline' %>">Tranh chấp</a>
+  </div>
+
+  <% if (challenges.length === 0) { %>
+    <p class="text-muted text-center" style="margin-top:2rem">Không có thách đấu nào.</p>
+  <% } else { %>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Đội thách đấu</th>
+          <th>VS</th>
+          <th>Đội bị thách đấu</th>
+          <th>Ngày</th>
+          <th>Kèo</th>
+          <th>Trạng thái</th>
+          <th>Kết quả</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% challenges.forEach(function(c) { %>
+        <tr class="<%= c.status === 'disputed' ? 'row-disputed' : '' %>">
+          <td><%= c.id %></td>
+          <td>
+            <strong><%= c.challenger_name %></strong>
+            <div class="text-muted text-sm"><%= c.challenger_members %></div>
+          </td>
+          <td class="text-center"><span class="vs-badge">VS</span></td>
+          <td>
+            <strong><%= c.challenged_name %></strong>
+            <div class="text-muted text-sm"><%= c.challenged_members %></div>
+          </td>
+          <td><%= c.match_date_fmt %><br><span class="text-muted"><%= c.match_time %></span></td>
+          <td><%= c.reward %></td>
+          <td><span class="badge badge-<%= c.status %>"><%= c.status %></span></td>
+          <td>
+            <% if (results[c.id] && results[c.id].length > 0) { %>
+              <% results[c.id].forEach(function(r) { %>
+                <div class="text-sm"><%= r.team_name %>: <strong><%= r.scores %></strong></div>
+              <% }); %>
+            <% } else { %>
+              <span class="text-muted">-</span>
+            <% } %>
+          </td>
+          <td>
+            <button type="button" class="btn btn-sm btn-accent" onclick='openResultModal(<%- JSON.stringify({
+              id: c.id,
+              challenger_team_id: c.challenger_team_id,
+              challenger_name: c.challenger_name,
+              challenged_team_id: c.challenged_team_id,
+              challenged_name: c.challenged_name,
+              scores: (results[c.id] && results[c.id][0]) ? results[c.id][0].scores : "",
+              winner_team_id: (results[c.id] && results[c.id][0]) ? results[c.id][0].winner_team_id : null
+            }) %>)'>⚡ Cập nhật KQ</button>
+            <a href="/admin/challenges/<%= c.id %>" class="btn btn-sm btn-outline">Chi tiết</a>
+            <% if (c.status !== 'completed') { %>
+            <form action="/admin/challenges/<%= c.id %>/delete" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="return confirm('Xóa thách đấu #<%= c.id %> (<%= c.challenger_name %> vs <%= c.challenged_name %>)?')">Xóa</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- Modal: Tạo thách đấu nhanh -->
+<div id="createChallengeModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:480px;margin:1rem;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h3 style="margin:0">⚔️ Tạo thách đấu nhanh</h3>
+      <button type="button" onclick="closeCreateChallengeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <form action="/admin/challenges/create" method="POST">
+      <div class="form-group">
+        <label class="form-label">Đội thách đấu *</label>
+        <select name="challenger_team_id" class="form-input" required>
+          <option value="">-- Chọn đội --</option>
+          <% teams.forEach(function(t) { %>
+            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Đội bị thách đấu *</label>
+        <select name="challenged_team_id" class="form-input" required>
+          <option value="">-- Chọn đội --</option>
+          <% teams.forEach(function(t) { %>
+            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+          <% }); %>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Ngày *</label>
+          <input type="date" name="match_date" class="form-input" required>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Giờ *</label>
+          <input type="time" name="match_time" class="form-input" value="06:00" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kèo</label>
+        <input type="text" name="reward" class="form-input" placeholder="Một bữa sáng" value="Một bữa sáng">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chi tiết kèo <span style="font-weight:400;text-transform:none;letter-spacing:0">(tùy chọn)</span></label>
+        <input type="text" name="reward_detail" class="form-input" placeholder="VD: Phở bò 2 tô">
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeCreateChallengeModal()" class="btn btn-outline">Hủy</button>
+        <button type="submit" class="btn btn-primary">Tạo thách đấu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Cập nhật kết quả nhanh -->
+<div id="resultModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:480px;margin:1rem;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h3 id="resultModalTitle" style="margin:0">⚡ Cập nhật kết quả</h3>
+      <button type="button" onclick="closeResultModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <form id="resultForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Tỉ số (VD: 11-7, 9-11, 11-8)</label>
+        <input type="text" name="scores" id="result_scores" class="form-input" placeholder="11-7, 11-9" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Đội thắng</label>
+        <div class="admin-winner-options">
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" id="result_winner_a" required>
+            <span class="admin-winner-card">
+              <span class="admin-winner-name" id="result_winner_a_name"></span>
+            </span>
+          </label>
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" id="result_winner_b">
+            <span class="admin-winner-card">
+              <span class="admin-winner-name" id="result_winner_b_name"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="admin-checkbox">
+          <input type="checkbox" name="reward_paid" value="1">
+          <span>Đội thua đã thanh toán bữa sáng</span>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeResultModal()" class="btn btn-outline">Hủy</button>
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Xác nhận chốt kết quả trận đấu này?')">Chốt kết quả</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openCreateChallengeModal() {
+  document.getElementById('createChallengeModal').style.display = 'flex';
+}
+function closeCreateChallengeModal() {
+  document.getElementById('createChallengeModal').style.display = 'none';
+}
+document.getElementById('createChallengeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateChallengeModal();
+});
+
+function openResultModal(c) {
+  document.getElementById('resultModalTitle').textContent = '⚡ Cập nhật kết quả trận #' + c.id;
+  document.getElementById('resultForm').action = '/admin/challenges/' + c.id + '/finalize';
+  document.getElementById('result_scores').value = c.scores || '';
+  document.getElementById('result_winner_a').value = c.challenger_team_id;
+  document.getElementById('result_winner_a_name').textContent = c.challenger_name;
+  document.getElementById('result_winner_b').value = c.challenged_team_id;
+  document.getElementById('result_winner_b_name').textContent = c.challenged_name;
+  document.getElementById('result_winner_a').checked = c.winner_team_id === c.challenger_team_id;
+  document.getElementById('result_winner_b').checked = c.winner_team_id === c.challenged_team_id;
+  document.getElementById('resultModal').style.display = 'flex';
+}
+function closeResultModal() {
+  document.getElementById('resultModal').style.display = 'none';
+}
+document.getElementById('resultModal').addEventListener('click', function(e) {
+  if (e.target === this) closeResultModal();
+});
+</script>
+
+<%- include('../partials/footer') %>

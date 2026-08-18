@@ -1,0 +1,152 @@
+<%- include('../partials/header', { title: 'Chốt kết quả', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Chốt kết quả trận #<%= challenge.id %></h1>
+    <a href="/admin/challenges" class="btn btn-outline btn-sm">← Danh sách</a>
+  </div>
+
+  <!-- Match info -->
+  <div class="admin-match-card">
+    <div class="admin-match-teams">
+      <div class="admin-match-team">
+        <div class="admin-match-avatars">
+          <% challengerMembers.forEach(function(m) { %>
+            <img src="/avatars/<%= m.avatar %>" alt="<%= m.full_name %>" class="admin-match-avatar" title="<%= m.full_name %>">
+          <% }); %>
+        </div>
+        <h3><%= challenge.challenger_name %></h3>
+        <p class="text-muted text-sm"><%= challengerMembers.map(m => m.full_name).join(', ') %></p>
+      </div>
+
+      <div class="admin-match-vs">
+        <span class="vs-big">VS</span>
+        <div class="admin-match-meta">
+          <div>📅 <%= challenge.match_date_fmt %></div>
+          <div>⏰ <%= challenge.match_time %></div>
+          <div>🍜 <%= challenge.reward %><%= challenge.reward_detail ? ' - ' + challenge.reward_detail : '' %></div>
+        </div>
+        <span class="badge badge-<%= challenge.status %>" style="font-size:0.9rem;padding:0.4rem 1rem"><%= challenge.status %></span>
+      </div>
+
+      <div class="admin-match-team">
+        <div class="admin-match-avatars">
+          <% challengedMembers.forEach(function(m) { %>
+            <img src="/avatars/<%= m.avatar %>" alt="<%= m.full_name %>" class="admin-match-avatar" title="<%= m.full_name %>">
+          <% }); %>
+        </div>
+        <h3><%= challenge.challenged_name %></h3>
+        <p class="text-muted text-sm"><%= challengedMembers.map(m => m.full_name).join(', ') %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing results from players -->
+  <% if (results.length > 0) { %>
+  <div class="card" style="margin-bottom:1.5rem">
+    <h3 style="margin-bottom:1rem">📋 Kết quả do đội báo cáo</h3>
+    <% results.forEach(function(r) { %>
+      <div class="admin-result-row">
+        <strong><%= r.team_name %></strong> báo cáo:
+        Tỉ số <span class="admin-score"><%= r.scores %></span>
+        — Đội thắng: <strong><%= r.winner_team_id ? (r.winner_team_id == challenge.challenger_team_id ? challenge.challenger_name : challenge.challenged_name) : 'Chưa xác định' %></strong>
+        <% if (r.reward_paid) { %><span class="badge badge-completed">Đã trả thưởng</span><% } %>
+      </div>
+    <% }); %>
+
+    <% if (results.length === 2 && (results[0].scores !== results[1].scores || results[0].winner_team_id !== results[1].winner_team_id)) { %>
+      <div class="alert alert-warning" style="margin-top:1rem">
+        ⚠️ Kết quả 2 đội không khớp! Cần admin chốt kết quả chính thức.
+      </div>
+    <% } %>
+  </div>
+  <% } %>
+
+  <!-- Admin finalize form -->
+  <div class="card admin-finalize">
+    <h3 style="margin-bottom:1rem">✅ Chốt kết quả chính thức</h3>
+    <form action="/admin/challenges/<%= challenge.id %>/finalize" method="POST">
+      <div class="form-group">
+        <label class="form-label">Tỉ số (VD: 11-7, 9-11, 11-8)</label>
+        <input type="text" name="scores" class="form-input" placeholder="11-7, 11-9" required
+          value="<%= results.length > 0 ? results[0].scores : '' %>">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đội thắng</label>
+        <div class="admin-winner-options">
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" value="<%= challenge.challenger_team_id %>" required>
+            <span class="admin-winner-card">
+              <span class="admin-winner-name"><%= challenge.challenger_name %></span>
+            </span>
+          </label>
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" value="<%= challenge.challenged_team_id %>">
+            <span class="admin-winner-card">
+              <span class="admin-winner-name"><%= challenge.challenged_name %></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="admin-checkbox">
+          <input type="checkbox" name="reward_paid" value="1">
+          <span>Đội thua đã thanh toán bữa sáng</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin/challenges" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Xác nhận chốt kết quả trận đấu này?')">Chốt kết quả</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Change date/time -->
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:1rem">📅 Đổi thời gian</h3>
+    <form action="/admin/challenges/<%= challenge.id %>/reschedule" method="POST" class="admin-status-form" style="flex-wrap:wrap">
+      <div class="form-group" style="margin-bottom:0">
+        <input type="date" name="match_date" class="form-input" value="<%= challenge.match_date %>" required style="max-width:180px">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <input type="time" name="match_time" class="form-input" value="<%= challenge.match_time %>" required style="max-width:140px">
+      </div>
+      <button type="submit" class="btn btn-outline btn-sm">Cập nhật</button>
+    </form>
+  </div>
+
+  <!-- Change status -->
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:1rem">🔄 Đổi trạng thái</h3>
+    <form action="/admin/challenges/<%= challenge.id %>/status" method="POST" class="admin-status-form">
+      <select name="status" class="form-input" style="max-width:200px">
+        <option value="pending" <%= challenge.status === 'pending' ? 'selected' : '' %>>Chờ duyệt</option>
+        <option value="accepted" <%= challenge.status === 'accepted' ? 'selected' : '' %>>Đã nhận</option>
+        <option value="scheduled" <%= challenge.status === 'scheduled' ? 'selected' : '' %>>Đã lên lịch</option>
+        <option value="disputed" <%= challenge.status === 'disputed' ? 'selected' : '' %>>Tranh chấp</option>
+        <option value="declined" <%= challenge.status === 'declined' ? 'selected' : '' %>>Từ chối</option>
+        <% if (challenge.status === 'completed') { %><option value="completed" selected>Hoàn thành</option><% } %>
+      </select>
+      <button type="submit" class="btn btn-outline btn-sm">Cập nhật</button>
+      <% if (challenge.status !== 'completed') { %>
+      <small style="color:var(--muted);font-size:0.8rem">Dùng "Chốt kết quả" để chuyển sang Hoàn thành</small>
+      <% } %>
+    </form>
+  </div>
+
+  <% if (challenge.status !== 'completed') { %>
+  <!-- Delete challenge -->
+  <div class="card" style="margin-top:1.5rem;border-color:var(--danger)">
+    <h3 style="margin-bottom:1rem;color:var(--danger)">🗑️ Xóa thách đấu</h3>
+    <p class="text-muted text-sm" style="margin-bottom:1rem">Chỉ xóa được thách đấu chưa hoàn thành. Hành động này không thể hoàn tác.</p>
+    <form action="/admin/challenges/<%= challenge.id %>/delete" method="POST">
+      <button type="submit" class="btn btn-outline" style="color:var(--danger);border-color:var(--danger)" onclick="return confirm('Xóa thách đấu này? Không thể hoàn tác.')">Xóa thách đấu</button>
+    </form>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

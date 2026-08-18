@@ -1,0 +1,74 @@
+<%- include('../partials/header', { title: 'Tạo đội mới', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Tạo đội mới</h1>
+    <p class="text-muted">Tạo đội và mời đồng đội của bạn</p>
+  </div>
+
+  <div class="form-card">
+    <form action="/teams" method="POST" id="createTeamForm">
+      <div class="form-group">
+        <label for="teamName" class="form-label">Tên đội</label>
+        <input type="text" id="teamName" name="name" class="form-input" placeholder="Nhập tên đội" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Loại đội</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="type" value="male" required>
+            <span class="radio-custom"></span>
+            Nam
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="type" value="female">
+            <span class="radio-custom"></span>
+            Nữ
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="type" value="mixed">
+            <span class="radio-custom"></span>
+            Hỗn hợp
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="teammateSelect" class="form-label">Mời đồng đội</label>
+        <select id="teammateSelect" name="teammate" class="form-input" required>
+          <option value="">-- Chọn đồng đội --</option>
+          <% if (typeof members !== 'undefined') { members.forEach(function(m) { %>
+            <option value="<%= m.id %>" data-avatar="/avatars/<%= m.avatar %>"><%= m.full_name %> (@<%= m.username %>)</option>
+          <% }); } %>
+        </select>
+        <p class="form-hint">Hoặc tìm kiếm:</p>
+        <div class="search-input-wrapper">
+          <input type="text" id="teammateSearch" class="form-input" placeholder="Gõ tên hoặc username để lọc..." autocomplete="off">
+        </div>
+      </div>
+
+      <script>
+      document.getElementById('teammateSearch').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const sel = document.getElementById('teammateSelect');
+        for (let i = 1; i < sel.options.length; i++) {
+          const text = sel.options[i].textContent.toLowerCase();
+          sel.options[i].hidden = q && !text.includes(q);
+        }
+        if (q) {
+          const visible = [...sel.options].find((o, i) => i > 0 && !o.hidden);
+          if (visible) sel.value = visible.value;
+        }
+      });
+      </script>
+
+      <div class="form-actions">
+        <a href="/teams" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Tạo đội</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' - ' : '' %>CLB Pickleball Vui cả tuần</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="/" class="navbar-brand">
+        <span class="brand-icon">PB</span>
+        <span class="brand-name">VUI CẢ TUẦN <span class="brand-highlight">Breakfast</span></span>
+      </a>
+
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/" class="nav-link">Trang chủ</a></li>
+        <li><a href="/members" class="nav-link">Thành viên</a></li>
+        <li><a href="/teams" class="nav-link">Đội</a></li>
+        <li><a href="/challenges" class="nav-link">Thách đấu</a></li>
+        <li><a href="/leaderboard" class="nav-link">Quỹ bữa sáng</a></li>
+        <% if (typeof user !== 'undefined' && user && user.is_admin) { %>
+          <li><a href="/admin" class="nav-link nav-link-admin"><span class="licon" data-lucide="shield"></span> Admin</a></li>
+        <% } %>
+      </ul>
+
+      <div class="nav-actions">
+        <% if (typeof user !== 'undefined' && user) { %>
+          <div class="notification-bell" id="notificationBell">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+          </div>
+
+          <div class="user-dropdown">
+            <button class="user-toggle" id="userToggle">
+              <img src="/avatars/<%= user.avatar || 'default.png' %>" alt="" class="user-avatar-sm">
+              <span class="user-name-nav"><%= user.fullName || user.username %></span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="dropdown-menu" id="dropdownMenu">
+              <a href="/change-password" class="dropdown-item">Đổi mật khẩu</a>
+              <hr class="dropdown-divider">
+              <a href="/logout" class="dropdown-item dropdown-item-danger">Đăng xuất</a>
+            </div>
+          </div>
+        <% } else { %>
+          <a href="/login" class="btn btn-primary btn-sm"><span>Đăng nhập</span></a>
+        <% } %>
+      </div>
+    </div>
+  </nav>
+
+  <% if (typeof flash !== 'undefined' && flash) { %>
+    <% if (flash.success) { %>
+      <div class="alert alert-success"><%= flash.success %></div>
+    <% } %>
+    <% if (flash.error) { %>
+      <div class="alert alert-error"><%= flash.error %></div>
+    <% } %>
+    <% if (flash.info) { %>
+      <div class="alert alert-info"><%= flash.info %></div>
+    <% } %>
+  <% } %>
+
+  <main class="main-content">

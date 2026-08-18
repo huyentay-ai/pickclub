@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang chủ - CLB Pickleball Vui cả tuần (Dark Preview)</title>
+  <link rel="stylesheet" href="../public/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="home.html" class="navbar-brand">
+        <span class="brand-icon">PB</span>
+        <span class="brand-name">VUI CẢ TUẦN <span class="brand-highlight">Breakfast</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="home.html" class="nav-link active">Trang chủ</a></li>
+        <li><a href="members.html" class="nav-link">Thành viên</a></li>
+        <li><a href="teams.html" class="nav-link">Đội</a></li>
+        <li><a href="leaderboard.html" class="nav-link">Quỹ bữa sáng</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#" class="btn btn-primary btn-sm" onclick="return false"><span>Đăng nhập</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <section class="hero">
+      <div class="hero-decor" aria-hidden="true">
+        <div class="hero-ball hero-ball-1"></div>
+        <div class="hero-ball hero-ball-2"></div>
+        <div class="hero-ball hero-ball-3"></div>
+      </div>
+      <div class="hero-avatars" id="heroAvatars" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="hero-subtitle">5:30 – 7:00 hàng ngày · DinkZone · Vĩnh Tuy</p>
+        <h1 class="hero-title">
+          PICKLEBALL <span class="hero-accent">CLUB</span>
+          <span class="hero-title-line2">VUI CẢ TUẦN <span class="hero-accent-orange">Breakfast</span></span>
+        </h1>
+        <p class="hero-tagline">Trúng thì nở mày nở mặt, trật thì... bao bữa sáng.</p>
+        <div class="hero-actions">
+          <a href="#" class="btn btn-accent btn-lg" onclick="return false"><span>Tạo thách đấu</span></a>
+          <a href="leaderboard.html" class="btn btn-outline-light btn-lg"><span>Bảng xếp hạng</span></a>
+        </div>
+      </div>
+    </section>
+
+    <div class="ticker-wrap">
+      <div class="ticker-label">Diễn biến</div>
+      <div class="ticker-track">
+        <div class="ticker-content" id="tickerContent"></div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="info-cards">
+          <div class="info-card">
+            <h3>Lịch chơi</h3>
+            <p class="info-card-value">5:30 - 7:00</p>
+            <p class="info-card-label">Hàng ngày</p>
+          </div>
+          <div class="info-card">
+            <h3>Địa điểm</h3>
+            <p class="info-card-value">DinkZone</p>
+            <p class="info-card-label"><a href="#" onclick="return false">64 ngõ 124 Vĩnh Tuy &rarr;</a></p>
+          </div>
+          <div class="info-card">
+            <h3>Thành viên</h3>
+            <p class="info-card-value" data-countup="13">13</p>
+            <p class="info-card-label">Người chơi</p>
+          </div>
+          <div class="info-card info-card-fund">
+            <h3>Quỹ bữa sáng</h3>
+            <p class="info-card-value" data-countup="128">128</p>
+            <p class="info-card-label"><a href="leaderboard.html">Xem chi tiết →</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Trận đấu gần đây</h2>
+        <div class="challenge-list" id="recentMatches"></div>
+        <div class="text-center mt-2">
+          <a href="#" class="btn btn-outline" onclick="return false"><span>Xem tất cả</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Thống kê nhanh</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value stat-color-1" data-countup="24">24</div>
+            <div class="stat-label">Trận đấu</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-color-2" data-countup="7">7</div>
+            <div class="stat-label">Đội</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-color-3" data-countup="128">128</div>
+            <div class="stat-label">Bữa sáng đã cược</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-color-4" data-countup="2">2</div>
+            <div class="stat-label">Đang thách đấu</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3 class="footer-brand">Vui cả tuần</h3>
+          <p class="footer-desc">CLB Pickleball Vui cả tuần - Chơi vui, ăn sáng ngon!</p>
+        </div>
+        <div class="footer-col">
+          <h4>Lịch chơi</h4>
+          <p><span class="licon" data-lucide="clock"></span> 5:30 - 7:00 hàng ngày</p>
+          <p><span class="licon" data-lucide="map-pin"></span> DinkZone, 64 ngõ 124 Vĩnh Tuy, Vĩnh Hưng, Hà Nội</p>
+        </div>
+        <div class="footer-col">
+          <h4>Liên kết</h4>
+          <ul class="footer-links">
+            <li><a href="members.html">Thành viên</a></li>
+            <li><a href="teams.html">Đội</a></li>
+            <li><a href="leaderboard.html">Bảng xếp hạng</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 CLB Pickleball Vui cả tuần. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="preview-data.js"></script>
+  <script src="../public/js/app.js"></script>
+  <script>
+    PreviewRender.heroAvatars(document.getElementById('heroAvatars'));
+    PreviewRender.ticker(document.getElementById('tickerContent'));
+    PreviewRender.recentMatches(document.getElementById('recentMatches'));
+    window.addEventListener('load', PreviewRender.initIcons);
+  </script>
+</body>
+</html>

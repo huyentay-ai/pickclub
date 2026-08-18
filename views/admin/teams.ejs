@@ -1,0 +1,83 @@
+<%- include('../partials/header', { title: 'Quản lý đội', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>🏆 Quản lý đội</h1>
+      <a href="/admin" class="btn btn-outline btn-sm" style="margin-top:0.5rem">← Quản trị</a>
+    </div>
+    <a href="/admin/teams/create" class="btn btn-primary">+ Tạo đội mới</a>
+  </div>
+
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Tên đội</th>
+          <th>Loại</th>
+          <th>Thành viên</th>
+          <th>Trạng thái</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% teams.forEach(function(t) { %>
+        <tr>
+          <td><%= t.id %></td>
+          <td><strong><%= t.name %></strong></td>
+          <td>
+            <span class="badge badge-type-<%= t.type %>">
+              <%= t.type === 'male' ? 'Nam' : t.type === 'female' ? 'Nữ' : 'Hỗn hợp' %>
+            </span>
+          </td>
+          <td><%= t.member_names %></td>
+          <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+          <td>
+            <button type="button" class="btn btn-sm btn-outline" onclick="openEditTeamModal(<%= t.id %>, <%= JSON.stringify(t.name) %>)">✏️ Sửa</button>
+            <form action="/admin/teams/<%= t.id %>/delete" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="return confirm('Xóa đội <%= t.name %>?')">Xóa</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal sửa tên đội -->
+<div id="editTeamModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:420px;margin:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h3 style="margin:0">✏️ Sửa tên đội</h3>
+      <button type="button" onclick="closeEditTeamModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+    <form id="editTeamForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Tên đội *</label>
+        <input type="text" name="name" id="edit_team_name" class="form-input" required>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeEditTeamModal()" class="btn btn-outline">Hủy</button>
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditTeamModal(id, name) {
+  document.getElementById('editTeamForm').action = '/admin/teams/' + id + '/edit';
+  document.getElementById('edit_team_name').value = name;
+  document.getElementById('editTeamModal').style.display = 'flex';
+}
+function closeEditTeamModal() {
+  document.getElementById('editTeamModal').style.display = 'none';
+}
+document.getElementById('editTeamModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditTeamModal();
+});
+</script>
+
+<%- include('../partials/footer') %>

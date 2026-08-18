@@ -1,0 +1,84 @@
+<%- include('../partials/header', { title: 'Chi tiết thách đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Trận đấu #<%= challenge.id %></h1>
+    <a href="/challenges" class="btn btn-outline btn-sm">← Danh sách</a>
+  </div>
+
+  <div class="admin-match-card">
+    <div class="admin-match-teams">
+      <div class="admin-match-team">
+        <h3><%= challenge.challenger_name %></h3>
+        <p class="text-muted text-sm"><%= challenge.challenger_captain_name %></p>
+      </div>
+      <div class="admin-match-vs">
+        <span class="vs-big">VS</span>
+        <div class="admin-match-meta">
+          <div>📅 <%= challenge.match_date_fmt %></div>
+          <div>⏰ <%= challenge.match_time %></div>
+          <div>🍜 <%= challenge.reward %><%= challenge.reward_detail ? ' - ' + challenge.reward_detail : '' %></div>
+        </div>
+        <span class="badge badge-<%= challenge.status %>" style="font-size:0.9rem;padding:0.4rem 1rem"><%= challenge.status === 'scheduled' ? 'Đã lên lịch' : challenge.status === 'completed' ? 'Hoàn thành' : challenge.status === 'disputed' ? 'Tranh chấp' : challenge.status %></span>
+      </div>
+      <div class="admin-match-team">
+        <h3><%= challenge.challenged_name %></h3>
+        <p class="text-muted text-sm"><%= challenge.challenged_captain_name %></p>
+      </div>
+    </div>
+  </div>
+
+  <% if (results && results.length > 0) { %>
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:1rem">📋 Kết quả đã báo cáo</h3>
+    <% results.forEach(function(r) { %>
+      <div class="admin-result-row">
+        <strong><%= r.team_name %></strong> báo cáo:
+        Tỉ số <span class="admin-score"><%= r.scores %></span>
+        — Đội thắng: <strong><%= r.winner_team_id == challenge.challenger_team_id ? challenge.challenger_name : challenge.challenged_name %></strong>
+        <% if (r.reporter_team_id === 0) { %><span class="badge badge-completed" style="margin-left:0.5rem">Admin xác nhận</span><% } %>
+        <% if (r.reward_paid) { %><span class="badge badge-completed" style="margin-left:0.5rem">Đã trả bữa sáng</span><% } %>
+      </div>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <% if (challenge.status === 'scheduled' && userTeam && !hasSubmitted) { %>
+  <div class="card" style="margin-top:1.5rem">
+    <h3 style="margin-bottom:1rem">📝 Gửi kết quả</h3>
+    <p class="text-muted" style="margin-bottom:1rem">Nhập tỉ số trận đấu. Admin sẽ xác nhận kết quả cuối cùng.</p>
+    <form action="/challenges/<%= challenge.id %>/result" method="POST">
+      <div class="form-group">
+        <label class="form-label">Tỉ số (VD: 11-7, 9-11, 11-8)</label>
+        <input type="text" name="scores" class="form-input" placeholder="11-7, 11-9" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Đội thắng</label>
+        <div class="admin-winner-options">
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" value="<%= challenge.challenger_team_id %>" required>
+            <span class="admin-winner-card"><span class="admin-winner-name"><%= challenge.challenger_name %></span></span>
+          </label>
+          <label class="admin-winner-option">
+            <input type="radio" name="winner_team_id" value="<%= challenge.challenged_team_id %>">
+            <span class="admin-winner-card"><span class="admin-winner-name"><%= challenge.challenged_name %></span></span>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Gửi kết quả</button>
+    </form>
+  </div>
+  <% } else if (challenge.status === 'scheduled' && userTeam && hasSubmitted) { %>
+  <div class="card" style="margin-top:1.5rem">
+    <p class="text-muted text-center">✅ Bạn đã gửi kết quả. Chờ admin xác nhận.</p>
+  </div>
+  <% } %>
+
+  <% if (typeof user !== 'undefined' && user && user.is_admin && challenge.status !== 'completed') { %>
+  <div class="text-center" style="margin-top:1.5rem">
+    <a href="/admin/challenges/<%= challenge.id %>" class="btn btn-primary">🛡️ Chốt kết quả (Admin)</a>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

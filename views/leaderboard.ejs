@@ -1,0 +1,151 @@
+<%- include('partials/header', { title: 'Quỹ bữa sáng', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header text-center">
+    <h1 class="leaderboard-title">Quỹ Bữa Sáng</h1>
+    <p class="text-muted">Thua góp bữa sáng — Tổng quỹ cho cả CLB!</p>
+  </div>
+
+  <div class="fund-total-card">
+    <div class="fund-total-label">Tổng quỹ bữa sáng</div>
+    <div class="fund-total-value"><span data-countup="<%= typeof totalFund !== 'undefined' ? totalFund : 0 %>"><%= typeof totalFund !== 'undefined' ? totalFund : 0 %></span> <span class="fund-total-unit">bữa sáng</span></div>
+  </div>
+
+  <div class="period-filter">
+    <a href="/leaderboard" class="period-btn <%= period === 'all' ? 'active' : '' %>">Tất cả</a>
+
+    <select id="sel-month" class="period-select" onchange="applyPeriodFilter()">
+      <option value="">Tháng...</option>
+      <% for (var mn = 1; mn <= 12; mn++) { %>
+        <option value="<%= mn %>" <%= selMonth === mn ? 'selected' : '' %>>Tháng <%= mn %></option>
+      <% } %>
+    </select>
+
+    <select id="sel-year" class="period-select" onchange="applyPeriodFilter()">
+      <option value="">Năm...</option>
+      <% [2026,2027,2028,2029,2030].forEach(function(yr) { %>
+        <option value="<%= yr %>" <%= selYear === yr ? 'selected' : '' %>>Năm <%= yr %></option>
+      <% }); %>
+    </select>
+  </div>
+
+  <script>
+    function applyPeriodFilter() {
+      var m = document.getElementById('sel-month').value;
+      var y = document.getElementById('sel-year').value;
+      var params = [];
+      if (m) params.push('m=' + m);
+      if (y) params.push('y=' + y);
+      window.location = '/leaderboard' + (params.length ? '?' + params.join('&') : '');
+    }
+  </script>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="ranking">Bảng xếp hạng</button>
+    <button class="tab" data-tab="results">Kết quả</button>
+  </div>
+
+  <div class="tab-content active" id="tab-ranking">
+    <% if (typeof leaderboard !== 'undefined' && leaderboard.length > 0) { %>
+      <div class="leaderboard-table-wrapper">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th class="col-rank">Hạng</th>
+              <th></th>
+              <th>Thành viên</th>
+              <th class="col-stat">Số trận</th>
+              <th class="col-stat">Góp bữa sáng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% leaderboard.forEach(function(entry, i) { %>
+              <tr class="<%= i < 3 ? 'top-' + (i + 1) : '' %>">
+                <td class="col-rank">
+                  <% if (i < 3) { %>
+                    <span class="rank-medal"><%= String(i + 1).padStart(2, '0') %></span>
+                  <% } else { %>
+                    <span class="rank-number"><%= String(i + 1).padStart(2, '0') %></span>
+                  <% } %>
+                </td>
+                <td><img src="/avatars/<%= entry.avatar %>" class="admin-table-avatar" alt=""></td>
+                <td>
+                  <strong><%= entry.full_name %></strong>
+                  <span class="text-muted text-sm"> @<%= entry.username %></span>
+                </td>
+                <td class="col-stat"><%= entry.matches %></td>
+                <td class="col-stat">
+                  <span class="stat-points <%= entry.points > 0 ? 'points-negative' : 'points-positive' %>">
+                    <%= entry.points > 0 ? '+' + entry.points : entry.points %>
+                  </span>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        <p>Chưa có dữ liệu. Hãy tạo thách đấu đầu tiên!</p>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="tab-content" id="tab-results">
+    <% if (typeof completedMatches !== 'undefined' && completedMatches.length > 0) { %>
+      <%
+        var currentDate = '';
+        completedMatches.forEach(function(m) {
+          var matchDate = m.match_date.split('-').reverse().join('/');
+          if (matchDate !== currentDate) {
+            currentDate = matchDate;
+      %>
+        <div class="results-date-header"><%= matchDate %></div>
+      <%
+          }
+          var cScore = '', dScore = '';
+          if (m.scores && m.winner_name) {
+            var pts = m.scores.trim().split('-');
+            if (pts.length === 2) {
+              var wS = pts[0].trim(), lS = pts[1].trim();
+              if (m.winner_name === m.challenger_name) { cScore = wS; dScore = lS; }
+              else { cScore = lS; dScore = wS; }
+            }
+          }
+      %>
+        <div class="result-match-card">
+          <div class="match-row">
+            <div class="match-team-side <%= m.winner_name === m.challenger_name ? 'match-team-winner' : '' %>">
+              <div class="match-team-avatars">
+                <% m.challenger_avatars.forEach(function(av) { %>
+                  <img src="/avatars/<%= av %>" class="match-avatar" alt="">
+                <% }); %>
+              </div>
+              <span class="match-team-name"><%= m.winner_name === m.challenger_name ? '🏆 ' : '' %><%= m.challenger_name %></span>
+              <% if (cScore) { %><span class="match-team-score"><%= cScore %></span><% } %>
+            </div>
+            <div class="match-center">
+              <span class="match-date" style="font-size:0.8rem;color:var(--muted)"><%= m.match_time %></span>
+              <span class="match-reward">🍜 <%= m.reward %></span>
+            </div>
+            <div class="match-team-side match-team-right <%= m.winner_name === m.challenged_name ? 'match-team-winner' : '' %>">
+              <% if (dScore) { %><span class="match-team-score"><%= dScore %></span><% } %>
+              <span class="match-team-name"><%= m.winner_name === m.challenged_name ? '🏆 ' : '' %><%= m.challenged_name %></span>
+              <div class="match-team-avatars">
+                <% m.challenged_avatars.forEach(function(av) { %>
+                  <img src="/avatars/<%= av %>" class="match-avatar" alt="">
+                <% }); %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <div class="empty-state">
+        <p>Chưa có trận đấu hoàn thành nào.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

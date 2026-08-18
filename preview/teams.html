@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đội - CLB Pickleball Vui cả tuần (Dark Preview)</title>
+  <link rel="stylesheet" href="../public/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.462.0/dist/umd/lucide.min.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="home.html" class="navbar-brand">
+        <span class="brand-icon">PB</span>
+        <span class="brand-name">VUI CẢ TUẦN <span class="brand-highlight">Breakfast</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="home.html" class="nav-link">Trang chủ</a></li>
+        <li><a href="members.html" class="nav-link">Thành viên</a></li>
+        <li><a href="teams.html" class="nav-link active">Đội</a></li>
+        <li><a href="leaderboard.html" class="nav-link">Quỹ bữa sáng</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="#" class="btn btn-primary btn-sm" onclick="return false"><span>Đăng nhập</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+      <div class="page-header page-header-with-action">
+        <div>
+          <h1>Đội</h1>
+          <p class="text-muted">Danh sách các đội pickleball</p>
+        </div>
+      </div>
+      <div class="teams-list" id="teamsList"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 CLB Pickleball Vui cả tuần. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="preview-data.js"></script>
+  <script src="../public/js/app.js"></script>
+  <script>
+    PreviewRender.teamCards(document.getElementById('teamsList'));
+    window.addEventListener('load', PreviewRender.initIcons);
+  </script>
+</body>
+</html>

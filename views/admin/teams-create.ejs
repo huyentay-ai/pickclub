@@ -1,0 +1,118 @@
+<%- include('../partials/header', { title: 'Tạo đội mới', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Tạo đội mới</h1>
+    <a href="/admin/teams" class="btn btn-outline btn-sm">← Quản lý đội</a>
+  </div>
+
+  <div class="form-card">
+    <form action="/admin/teams/create" method="POST" id="createTeamForm">
+      <div class="form-group">
+        <label for="member1" class="form-label">Thành viên 1</label>
+        <select id="member1" name="member1" class="form-input" required>
+          <option value="">-- Chọn thành viên --</option>
+          <% members.forEach(function(m) { %>
+            <option value="<%= m.id %>" data-name="<%= m.full_name %>"><%= m.full_name %> (@<%= m.username %>)</option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="member2" class="form-label">Thành viên 2</label>
+        <select id="member2" name="member2" class="form-input" required>
+          <option value="">-- Chọn thành viên --</option>
+          <% members.forEach(function(m) { %>
+            <option value="<%= m.id %>" data-name="<%= m.full_name %>"><%= m.full_name %> (@<%= m.username %>)</option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tên đội (tự động)</label>
+        <div class="team-name-preview" id="teamNamePreview">Chọn 2 thành viên để tạo tên đội</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Loại đội</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="type" value="male" checked>
+            <span class="radio-custom"></span>
+            Nam
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="type" value="female">
+            <span class="radio-custom"></span>
+            Nữ
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="type" value="mixed">
+            <span class="radio-custom"></span>
+            Hỗn hợp
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin/teams" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Tạo đội</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.team-name-preview {
+  padding: 0.75rem 1rem;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+.team-name-preview.empty { color: var(--gray-500); font-weight: 400; font-size: 0.9rem; }
+</style>
+
+<script>
+(function() {
+  const s1 = document.getElementById('member1');
+  const s2 = document.getElementById('member2');
+  const preview = document.getElementById('teamNamePreview');
+
+  function lastName(full) { return full.split(' ').pop(); }
+
+  function update() {
+    const o1 = s1.options[s1.selectedIndex];
+    const o2 = s2.options[s2.selectedIndex];
+    const v1 = s1.value, v2 = s2.value;
+
+    // Disable selected member in other dropdown
+    for (let i = 1; i < s2.options.length; i++) {
+      s2.options[i].disabled = (s2.options[i].value === v1 && v1 !== '');
+    }
+    for (let i = 1; i < s1.options.length; i++) {
+      s1.options[i].disabled = (s1.options[i].value === v2 && v2 !== '');
+    }
+
+    if (v1 && v2 && v1 !== v2) {
+      const n1 = o1.getAttribute('data-name');
+      const n2 = o2.getAttribute('data-name');
+      preview.textContent = lastName(n1) + ' & ' + lastName(n2);
+      preview.classList.remove('empty');
+    } else {
+      preview.textContent = 'Chọn 2 thành viên để tạo tên đội';
+      preview.classList.add('empty');
+    }
+  }
+
+  s1.addEventListener('change', update);
+  s2.addEventListener('change', update);
+  preview.classList.add('empty');
+})();
+</script>
+
+<%- include('../partials/footer') %>

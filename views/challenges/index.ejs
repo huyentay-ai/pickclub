@@ -1,0 +1,44 @@
+<%- include('../partials/header', { title: 'Thách đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>Thách đấu</h1>
+      <p class="text-muted">Quản lý các trận thách đấu bữa sáng</p>
+    </div>
+    <a href="/challenges/create" class="btn btn-primary">+ Tạo thách đấu</a>
+  </div>
+
+  <% if (typeof challenges !== 'undefined' && challenges.length > 0) { %>
+    <div class="challenge-list">
+      <% challenges.forEach(function(c) { %>
+        <a href="/challenges/<%= c.id %>" class="challenge-card">
+          <div class="challenge-card-top">
+            <div class="challenge-teams">
+              <div class="challenge-team">
+                <strong><%= c.challenger_name %></strong>
+              </div>
+              <div class="challenge-vs">VS</div>
+              <div class="challenge-team">
+                <strong><%= c.challenged_name %></strong>
+              </div>
+            </div>
+            <span class="badge badge-<%= c.status %>"><%= c.status === 'scheduled' ? 'Đã lên lịch' : c.status === 'completed' ? 'Hoàn thành' : c.status === 'disputed' ? 'Tranh chấp' : c.status %></span>
+          </div>
+          <div class="challenge-card-details">
+            <span>📅 <%= c.match_date_fmt %></span>
+            <span>⏰ <%= c.match_time %></span>
+            <span>🍜 <%= c.reward %></span>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p class="text-muted">Chưa có thách đấu nào.</p>
+      <a href="/challenges/create" class="btn btn-primary">Tạo thách đấu đầu tiên</a>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

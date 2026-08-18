@@ -1,0 +1,100 @@
+<%- include('../partials/header', { title: 'Tạo thách đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Tạo thách đấu</h1>
+    <p class="text-muted">Chọn 2 đội và cược bữa sáng!</p>
+  </div>
+
+  <div class="form-card">
+    <form action="/challenges/create" method="POST" id="createChallengeForm">
+      <div class="form-group">
+        <label for="challengerTeam" class="form-label">Đội thách đấu</label>
+        <select id="challengerTeam" name="challenger_team_id" class="form-input" required>
+          <option value="">-- Chọn đội --</option>
+          <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
+            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+          <% }); } %>
+        </select>
+      </div>
+
+      <div class="vs-divider">VS</div>
+
+      <div class="form-group">
+        <label for="challengedTeam" class="form-label">Đội bị thách đấu</label>
+        <select id="challengedTeam" name="challenged_team_id" class="form-input" required>
+          <option value="">-- Chọn đội --</option>
+          <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
+            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+          <% }); } %>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group form-group-half">
+          <label for="challengeDate" class="form-label">Ngày</label>
+          <input type="date" id="challengeDate" name="match_date" class="form-input" required>
+        </div>
+        <div class="form-group form-group-half">
+          <label for="challengeTime" class="form-label">Giờ</label>
+          <input type="time" id="challengeTime" name="match_time" class="form-input" value="05:30" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kèo bữa sáng</label>
+        <div class="reward-options">
+          <label class="reward-option">
+            <input type="radio" name="reward" value="Phở bò" checked>
+            <span class="reward-card">🍜 Phở bò</span>
+          </label>
+          <label class="reward-option">
+            <input type="radio" name="reward" value="Bánh mì chảo">
+            <span class="reward-card">🍳 Bánh mì chảo</span>
+          </label>
+          <label class="reward-option">
+            <input type="radio" name="reward" value="Bún chả">
+            <span class="reward-card">🥢 Bún chả</span>
+          </label>
+          <label class="reward-option">
+            <input type="radio" name="reward" value="Cơm rang">
+            <span class="reward-card">🍚 Cơm rang</span>
+          </label>
+          <label class="reward-option">
+            <input type="radio" name="reward" value="custom" id="rewardCustomRadio">
+            <span class="reward-card">✏️ Tự chọn</span>
+          </label>
+        </div>
+        <input type="text" name="reward_detail" id="customReward" class="form-input mt-1" placeholder="Nhập phần thưởng tùy chọn..." style="display:none">
+      </div>
+
+      <div class="form-actions">
+        <a href="/challenges" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Gửi thách đấu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.vs-divider {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0.5rem 0;
+  letter-spacing: 2px;
+}
+</style>
+
+<script>
+document.getElementById('challengerTeam').addEventListener('change', function() {
+  const val = this.value;
+  const opts = document.getElementById('challengedTeam').options;
+  for (let i = 0; i < opts.length; i++) {
+    opts[i].disabled = (opts[i].value === val && val !== '');
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>

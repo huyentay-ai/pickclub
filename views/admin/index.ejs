@@ -1,0 +1,97 @@
+<%- include('../partials/header', { title: 'Quản trị', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>🛡️ Trang quản trị</h1>
+    <p class="text-muted">Quản lý CLB Pickleball - Vui cả tuần</p>
+  </div>
+
+  <div class="admin-stats">
+    <div class="admin-stat-card">
+      <div class="admin-stat-value"><%= stats.members %></div>
+      <div class="admin-stat-label">Thành viên</div>
+    </div>
+    <div class="admin-stat-card">
+      <div class="admin-stat-value"><%= stats.teams %></div>
+      <div class="admin-stat-label">Đội</div>
+    </div>
+    <div class="admin-stat-card">
+      <div class="admin-stat-value"><%= stats.totalChallenges %></div>
+      <div class="admin-stat-label">Thách đấu</div>
+    </div>
+    <div class="admin-stat-card accent">
+      <div class="admin-stat-value"><%= stats.pending %></div>
+      <div class="admin-stat-label">Chờ duyệt</div>
+    </div>
+    <div class="admin-stat-card success">
+      <div class="admin-stat-value"><%= stats.completed %></div>
+      <div class="admin-stat-label">Đã hoàn thành</div>
+    </div>
+    <div class="admin-stat-card danger">
+      <div class="admin-stat-value"><%= stats.disputed %></div>
+      <div class="admin-stat-label">Tranh chấp</div>
+    </div>
+  </div>
+
+  <div class="admin-nav">
+    <a href="/admin/challenges" class="admin-nav-card">
+      <span class="admin-nav-icon">⚔️</span>
+      <span class="admin-nav-title">Quản lý thách đấu</span>
+      <span class="admin-nav-desc">Chốt kết quả, xử lý tranh chấp</span>
+    </a>
+    <a href="/admin/members" class="admin-nav-card">
+      <span class="admin-nav-icon">👥</span>
+      <span class="admin-nav-title">Quản lý thành viên</span>
+      <span class="admin-nav-desc">Tài khoản, quyền admin</span>
+    </a>
+    <a href="/admin/teams" class="admin-nav-card">
+      <span class="admin-nav-icon">🏆</span>
+      <span class="admin-nav-title">Quản lý đội</span>
+      <span class="admin-nav-desc">Danh sách đội, thành viên</span>
+    </a>
+    <a href="/admin/logs" class="admin-nav-card">
+      <span class="admin-nav-icon">📝</span>
+      <span class="admin-nav-title">Nhật ký hoạt động</span>
+      <span class="admin-nav-desc">Theo dõi login, thách đấu, kết quả</span>
+    </a>
+    <a href="/admin/export" class="admin-nav-card">
+      <span class="admin-nav-icon">📊</span>
+      <span class="admin-nav-title">Xuất Excel</span>
+      <span class="admin-nav-desc">Vận động viên, đội, kết quả trận đấu</span>
+    </a>
+  </div>
+
+  <% if (recentChallenges.length > 0) { %>
+  <h2 class="section-title" style="margin-top:2rem">Thách đấu gần đây</h2>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Đội thách đấu</th>
+          <th>Đội bị thách đấu</th>
+          <th>Ngày</th>
+          <th>Kèo</th>
+          <th>Trạng thái</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recentChallenges.forEach(function(c) { %>
+        <tr>
+          <td><%= c.id %></td>
+          <td><strong><%= c.challenger_name %></strong></td>
+          <td><strong><%= c.challenged_name %></strong></td>
+          <td><%= c.match_date_fmt %> <%= c.match_time %></td>
+          <td><%= c.reward %></td>
+          <td><span class="badge badge-<%= c.status %>"><%= c.status %></span></td>
+          <td><a href="/admin/challenges/<%= c.id %>" class="btn btn-sm btn-outline">Chi tiết</a></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

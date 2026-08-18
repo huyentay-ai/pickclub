@@ -1,0 +1,66 @@
+<%- include('../partials/header', { title: 'Nhật ký hoạt động', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>📝 Nhật ký hoạt động</h1>
+      <p class="text-muted"><%= total %> bản ghi</p>
+    </div>
+    <a href="/admin" class="btn btn-outline btn-sm">← Quản trị</a>
+  </div>
+
+  <div class="admin-filters">
+    <a href="/admin/logs" class="btn btn-sm <%= !filter ? 'btn-primary' : 'btn-outline' %>">Tất cả</a>
+    <% actions.forEach(function(a) { %>
+      <a href="/admin/logs?action=<%= a %>" class="btn btn-sm <%= filter === a ? 'btn-primary' : 'btn-outline' %>"><%= a %></a>
+    <% }); %>
+  </div>
+
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Người dùng</th>
+          <th>Hành động</th>
+          <th>Chi tiết</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (logs.length === 0) { %>
+          <tr><td colspan="5" class="text-center text-muted" style="padding:2rem">Chưa có hoạt động nào</td></tr>
+        <% } %>
+        <% logs.forEach(function(l) { %>
+        <tr>
+          <td class="log-time"><%= l.created_at %></td>
+          <td>
+            <% if (l.avatar) { %>
+              <img src="/avatars/<%= l.avatar %>" class="admin-table-avatar" alt="" style="margin-right:0.4rem;vertical-align:middle">
+            <% } %>
+            <strong><%= l.user_name %></strong>
+            <% if (l.username) { %><span class="text-muted text-sm"> @<%= l.username %></span><% } %>
+          </td>
+          <td><span class="log-action log-action-<%= l.action.split('_')[0] %>"><%= l.action %></span></td>
+          <td class="text-sm"><%= l.detail || '-' %></td>
+          <td class="text-muted text-sm"><%= l.ip || '-' %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (totalPages > 1) { %>
+  <div class="pagination">
+    <% if (page > 1) { %>
+      <a href="/admin/logs?page=<%= page - 1 %><%= filter ? '&action=' + filter : '' %>" class="btn btn-sm btn-outline">← Trước</a>
+    <% } %>
+    <span class="pagination-info">Trang <%= page %>/<%= totalPages %></span>
+    <% if (page < totalPages) { %>
+      <a href="/admin/logs?page=<%= page + 1 %><%= filter ? '&action=' + filter : '' %>" class="btn btn-sm btn-outline">Sau →</a>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

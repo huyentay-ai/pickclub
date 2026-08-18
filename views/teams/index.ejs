@@ -1,0 +1,52 @@
+<%- include('../partials/header', { title: 'Đội', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>Đội</h1>
+      <p class="text-muted">Danh sách các đội pickleball</p>
+    </div>
+    <% if (typeof user !== 'undefined' && user && user.is_admin) { %>
+      <a href="/admin/teams/create" class="btn btn-primary">+ Tạo đội mới</a>
+    <% } %>
+  </div>
+
+  <% if (typeof teams !== 'undefined' && teams.length > 0) { %>
+    <div class="teams-list">
+      <% teams.forEach(function(team) { %>
+        <a href="/teams/<%= team._id || team.id %>" class="team-card">
+          <div class="team-card-header">
+            <h3 class="team-name"><%= team.name %></h3>
+            <span class="badge badge-type-<%= team.type %>">
+              <%= team.type === 'male' ? 'Nam' : team.type === 'female' ? 'Nữ' : 'Hỗn hợp' %>
+            </span>
+          </div>
+          <div class="team-card-body">
+            <div class="team-members-avatars">
+              <% if (team.members) { team.members.forEach(function(m) { %>
+                <div class="team-member-chip">
+                  <img src="/avatars/<%= m.avatar %>" alt="<%= m.full_name %>" class="team-member-avatar">
+                  <span class="team-member-name"><%= m.full_name %></span>
+                </div>
+              <% }); } %>
+            </div>
+          </div>
+          <div class="team-card-footer">
+            <span class="badge badge-<%= team.status || 'active' %>">
+              <%= team.status === 'active' ? 'Hoạt động' : team.status === 'pending' ? 'Chờ duyệt' : 'Không hoạt động' %>
+            </span>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p>Chưa có đội nào. Hãy tạo đội đầu tiên!</p>
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/teams/create" class="btn btn-primary">Tạo đội mới</a>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

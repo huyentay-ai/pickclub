@@ -1,0 +1,172 @@
+<%- include('../partials/header', { title: 'Quản lý thành viên', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>👥 Quản lý thành viên</h1>
+    <a href="/admin" class="btn btn-outline btn-sm">← Quản trị</a>
+  </div>
+
+  <!-- Thêm thành viên mới -->
+  <div class="card" style="margin-bottom:2rem">
+    <h3 style="margin-bottom:1.2rem">➕ Thêm thành viên mới</h3>
+    <form action="/admin/members/create" method="POST" enctype="multipart/form-data">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Họ và tên *</label>
+          <input type="text" name="full_name" class="form-input" placeholder="Nguyễn Văn A" required>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" class="form-input" placeholder="nguyenvana" required>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Mật khẩu</label>
+          <input type="text" name="password" class="form-input" placeholder="Mặc định: 1234">
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;flex:1;min-width:200px">
+          <label class="form-label">Ảnh đại diện <span style="font-weight:400;text-transform:none;letter-spacing:0">(bỏ trống sẽ chọn ngẫu nhiên)</span></label>
+          <input type="file" name="avatar" accept="image/*" class="form-input" style="padding:0.4rem">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="admin-checkbox">
+            <input type="checkbox" name="is_admin" value="1">
+            <span>Quyền Admin</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm thành viên</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Danh sách thành viên -->
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Ảnh</th>
+          <th>Tên</th>
+          <th>Username</th>
+          <th>Quyền</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% members.forEach(function(m) { %>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <img src="/avatars/<%= m.avatar %>" class="admin-table-avatar" alt="" id="avatar-preview-<%= m.id %>">
+              <form action="/admin/members/<%= m.id %>/avatar" method="POST" enctype="multipart/form-data" title="Đổi ảnh">
+                <label style="cursor:pointer;font-size:0.75rem;color:var(--primary);white-space:nowrap" title="Đổi ảnh">
+                  📷
+                  <input type="file" name="avatar" accept="image/*" style="display:none" onchange="this.form.submit()">
+                </label>
+              </form>
+            </div>
+          </td>
+          <td><strong><%= m.full_name %></strong></td>
+          <td>@<%= m.username %></td>
+          <td>
+            <% if (m.is_admin) { %>
+              <span class="badge badge-completed">Admin</span>
+            <% } else { %>
+              <span class="badge" style="background:#eee;color:#555">Thành viên</span>
+            <% } %>
+          </td>
+          <td class="admin-actions-cell">
+            <button type="button" class="btn btn-sm btn-outline" onclick="openEditModal(<%= JSON.stringify(m) %>)">✏️ Sửa</button>
+            <form action="/admin/members/<%= m.id %>/toggle-admin" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-outline" onclick="return confirm('<%= m.is_admin ? 'Gỡ quyền admin?' : 'Cấp quyền admin?' %>')">
+                <%= m.is_admin ? 'Gỡ admin' : 'Cấp admin' %>
+              </button>
+            </form>
+            <form action="/admin/members/<%= m.id %>/reset-password" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-sm btn-outline" onclick="return confirm('Reset mật khẩu về 1234?')">Reset MK</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal chỉnh sửa thành viên -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center">
+  <div class="card" style="width:100%;max-width:520px;margin:1rem;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h3 style="margin:0">✏️ Sửa thông tin thành viên</h3>
+      <button onclick="closeEditModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
+    </div>
+
+    <form id="editForm" method="POST" enctype="multipart/form-data">
+      <!-- Preview avatar -->
+      <div style="text-align:center;margin-bottom:1.25rem">
+        <img id="editAvatarPreview" src="" alt="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--line)">
+        <div style="margin-top:0.5rem">
+          <label style="cursor:pointer;font-size:0.85rem;color:var(--primary);font-weight:600">
+            📷 Đổi ảnh
+            <input type="file" name="avatar" accept="image/*" style="display:none" onchange="previewEditAvatar(this)">
+          </label>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Họ và tên *</label>
+          <input type="text" name="full_name" id="edit_full_name" class="form-input" required>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" id="edit_username" class="form-input" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:1rem">
+        <label class="form-label">Mật khẩu mới <span style="font-weight:400;text-transform:none;letter-spacing:0">(để trống = giữ nguyên)</span></label>
+        <input type="text" name="password" class="form-input" placeholder="Nhập mật khẩu mới nếu muốn đổi">
+      </div>
+
+      <div class="form-group">
+        <label class="admin-checkbox">
+          <input type="checkbox" name="is_admin" id="edit_is_admin" value="1">
+          <span>Quyền Admin</span>
+        </label>
+      </div>
+
+      <div class="form-actions" style="margin-top:1rem">
+        <button type="button" onclick="closeEditModal()" class="btn btn-outline">Hủy</button>
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditModal(member) {
+  document.getElementById('editForm').action = '/admin/members/' + member.id + '/edit';
+  document.getElementById('edit_full_name').value = member.full_name;
+  document.getElementById('edit_username').value = member.username;
+  document.getElementById('edit_is_admin').checked = !!member.is_admin;
+  document.getElementById('editAvatarPreview').src = '/avatars/' + member.avatar;
+  const modal = document.getElementById('editModal');
+  modal.style.display = 'flex';
+}
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+function previewEditAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => document.getElementById('editAvatarPreview').src = e.target.result;
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+
+<%- include('../partials/footer') %>
