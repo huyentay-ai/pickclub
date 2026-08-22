@@ -27,10 +27,10 @@ bash deploy.sh           # full rebuild
 bash deploy-frontend.sh  # chỉ CSS + views
 ```
 
-Backup / restore database trên Docker:
+Backup / restore database (bind mount `./data`, không cần vào container):
 ```bash
-docker cp pick-club:/app/data/club.db ./club-backup.db  # backup
-docker cp ./club-backup.db pick-club:/app/data/club.db  # restore
+cp data/club.db ./club-backup.db      # backup
+cp ./club-backup.db data/club.db      # restore (nên dừng container trước khi ghi đè)
 ```
 
 ## Architecture
@@ -152,10 +152,9 @@ Set qua `req.session.flash = { type, message }`, tự xóa sau khi render (middl
 ### Docker
 
 - `Dockerfile`: Node 20 Alpine, cài build tools cho better-sqlite3 native addon
-- `docker-compose.yml`: port 3001:3000, volume `pick-club-data` mount vào `/app/data`
+- `docker-compose.yml`: port 3001:3000, bind mount `./data:/app/data` — data nằm ngay trong thư mục project trên host (`data/club.db`, `data/sessions.db`), không phải named volume
 - `.dockerignore`: loại `node_modules`, `data`, `.claude`, `.git`
-- Data lưu trong named volume `pick-club-data` → trên host tại `/var/lib/docker/volumes/pick-club-data/_data/`
-- Volume **không bị xóa** khi rebuild image — data an toàn khi deploy
+- Bind mount **không bị xóa** khi rebuild image — data an toàn khi deploy; backup/restore chỉ cần copy trực tiếp file `data/club.db` trên host, không cần `docker cp`
 
 ### Theme & CSS
 

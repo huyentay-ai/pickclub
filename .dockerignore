@@ -1,5 +1,7 @@
 node_modules
 data
+data-backup
+data-quarantine
 .claude
 .git
 *.md

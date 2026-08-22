@@ -1304,3 +1304,16 @@ a:hover { color: var(--primary-dark); }
   .hero-tagline { font-size: 0.82rem; }
   .hero { padding: 2.5rem 1rem 2rem; }
 }
+
+/* ==== Tournament module ==== */
+.badge-draft { background: var(--gray-100); color: var(--gray-500); }
+.badge-seeded { background: #dbeafe; color: #1e40af; }
+
+.tournament-groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+.group-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.group-card-header { background: var(--primary); color: #fff; padding: 0.6rem 1rem; font-family: var(--font-cond); font-weight: 700; letter-spacing: 0.02em; }
+.group-card-body { padding: 0.75rem 1rem; }
+.group-seed-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.group-seed-row:last-child { border-bottom: none; }
+.group-seed-badge { width: 22px; height: 22px; border-radius: 50%; background: var(--gray-100); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+.final-match-card { border-left: 3px solid var(--accent); }

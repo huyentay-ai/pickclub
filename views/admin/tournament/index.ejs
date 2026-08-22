@@ -1,0 +1,64 @@
+<%- include('../../partials/header', { title: 'Quản lý giải đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>🏓 Quản lý giải đấu</h1>
+      <a href="/admin" class="btn btn-outline btn-sm" style="margin-top:0.5rem">← Quản trị</a>
+    </div>
+    <a href="/admin/tournament/create" class="btn btn-primary">+ Tạo giải đấu mới</a>
+  </div>
+
+  <% if (tournaments.length > 0) { %>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên giải</th>
+            <th>Ngày</th>
+            <th>Số người</th>
+            <th>Trạng thái</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% tournaments.forEach(function(t) { %>
+          <tr>
+            <td><%= t.id %></td>
+            <td><strong><%= t.name %></strong></td>
+            <td><%= t.event_date || '-' %></td>
+            <td><%= t.participant_count %></td>
+            <td><span class="badge badge-<%= t.status %>"><%= t.status %></span></td>
+            <td>
+              <% if (t.status === 'draft') { %>
+                <a href="/admin/tournament/<%= t.id %>/seed" class="btn btn-sm btn-outline">Chia bảng</a>
+              <% } else if (t.status === 'seeded') { %>
+                <a href="/admin/tournament/<%= t.id %>/seed" class="btn btn-sm btn-outline">Sửa bảng</a>
+              <% } else if (t.status === 'active') { %>
+                <a href="/admin/tournament/<%= t.id %>/matches" class="btn btn-sm btn-outline">Nhập kết quả</a>
+              <% } else { %>
+                <a href="/tournament/<%= t.id %>" class="btn btn-sm btn-outline">Xem kết quả</a>
+              <% } %>
+              <% if (t.status !== 'draft') { %>
+                <a href="/admin/tournament/<%= t.id %>/export" class="btn btn-sm btn-outline">📊 Xuất Excel</a>
+              <% } %>
+              <% if (['draft', 'seeded'].includes(t.status)) { %>
+                <form action="/admin/tournament/<%= t.id %>/delete" method="POST" style="display:inline">
+                  <button type="submit" class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="return confirm('Xóa giải đấu <%= t.name %>?')">Xóa</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p>Chưa có giải đấu nào. Hãy tạo giải đầu tiên!</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>

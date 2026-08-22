@@ -48,8 +48,10 @@ const authRoutes = require('./routes/auth');
 app.use('/', authRoutes);
 app.use('/teams', require('./routes/teams'));
 app.use('/challenges', require('./routes/challenges'));
+app.use('/tournament', require('./routes/tournament'));
 app.use('/api', require('./routes/api'));
 app.use('/admin', require('./routes/admin'));
+app.use('/admin/tournament', require('./routes/admin-tournament'));
 
 // Home page
 app.get('/', (req, res) => {

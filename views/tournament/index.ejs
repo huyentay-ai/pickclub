@@ -1,0 +1,33 @@
+<%- include('../partials/header', { title: 'Giải đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>🏓 Giải đấu</h1>
+    <p class="text-muted">Các giải đấu nội bộ CLB</p>
+  </div>
+
+  <% if (tournaments.length > 0) { %>
+    <div class="teams-list">
+      <% tournaments.forEach(function(t) { %>
+        <a href="/tournament/<%= t.id %>" class="team-card">
+          <div class="team-card-header">
+            <h3 class="team-name"><%= t.name %></h3>
+            <span class="badge badge-<%= t.status %>"><%= t.status %></span>
+          </div>
+          <div class="team-card-body">
+            <p class="text-muted text-sm">
+              <% if (t.event_date) { %>📅 <%= t.event_date %> · <% } %>
+              👥 <%= t.participant_count %> người tham gia
+            </p>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p>Chưa có giải đấu nào.</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

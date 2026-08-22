@@ -1,0 +1,66 @@
+<%- include('../../partials/header', { title: 'Tạo giải đấu mới', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Tạo giải đấu mới</h1>
+    <a href="/admin/tournament" class="btn btn-outline btn-sm">← Quản lý giải đấu</a>
+  </div>
+
+  <div class="form-card">
+    <form action="/admin/tournament/create" method="POST">
+      <div class="form-group">
+        <label for="name" class="form-label">Tên giải đấu</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="VD: Giải đấu nội bộ PickClub" required>
+      </div>
+
+      <div class="form-group">
+        <label for="event_date" class="form-label">Ngày tổ chức (tùy chọn)</label>
+        <input type="date" id="event_date" name="event_date" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Người tham gia (số người phải là bội số của 4) — đã chọn <span id="selectedCount">0</span> người</label>
+        <div class="participant-checklist">
+          <% users.forEach(function(u) { %>
+            <label class="admin-checkbox">
+              <input type="checkbox" name="participants" value="<%= u.id %>" class="participant-check">
+              <img src="/avatars/<%= u.avatar %>" class="admin-table-avatar" alt="">
+              <span><%= u.full_name %> <span class="text-muted text-sm">@<%= u.username %></span></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin/tournament" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Tạo giải đấu &amp; chia bảng</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.participant-checklist {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+.participant-checklist .admin-checkbox { padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.participant-checklist .admin-checkbox:last-child { border-bottom: none; }
+</style>
+
+<script>
+(function() {
+  const checks = document.querySelectorAll('.participant-check');
+  const counter = document.getElementById('selectedCount');
+  function update() {
+    counter.textContent = document.querySelectorAll('.participant-check:checked').length;
+  }
+  checks.forEach(function(c) { c.addEventListener('change', update); });
+  update();
+})();
+</script>
+
+<%- include('../../partials/footer') %>

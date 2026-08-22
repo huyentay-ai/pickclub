@@ -6,7 +6,7 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - pick-club-data:/app/data
+      - ./data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -14,9 +14,6 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
     networks:
       - pickclub-shared
-
-volumes:
-  pick-club-data:
 
 networks:
   pickclub-shared:

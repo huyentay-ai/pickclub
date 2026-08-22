@@ -85,6 +85,60 @@ function initDatabase() {
       is_read INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS tournaments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      event_date TEXT,
+      status TEXT DEFAULT 'draft' CHECK(status IN ('draft','seeded','active','completed')),
+      group_size INTEGER DEFAULT 4,
+      created_by INTEGER REFERENCES users(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS tournament_participants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      seed_elo REAL,
+      seed_rank INTEGER,
+      total_points INTEGER DEFAULT 0,
+      points_diff INTEGER DEFAULT 0,
+      final_rank INTEGER,
+      UNIQUE(tournament_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS tournament_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+      group_label TEXT NOT NULL,
+      group_order INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tournament_group_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      group_id INTEGER NOT NULL REFERENCES tournament_groups(id),
+      participant_id INTEGER NOT NULL REFERENCES tournament_participants(id),
+      group_seed INTEGER NOT NULL CHECK(group_seed IN (1,2,3,4)),
+      UNIQUE(group_id, participant_id),
+      UNIQUE(group_id, group_seed)
+    );
+
+    CREATE TABLE IF NOT EXISTS tournament_matches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+      round_type TEXT NOT NULL CHECK(round_type IN ('group','final','consolation')),
+      group_id INTEGER REFERENCES tournament_groups(id),
+      match_no INTEGER NOT NULL,
+      team_a_player1 INTEGER NOT NULL REFERENCES tournament_participants(id),
+      team_a_player2 INTEGER NOT NULL REFERENCES tournament_participants(id),
+      team_b_player1 INTEGER NOT NULL REFERENCES tournament_participants(id),
+      team_b_player2 INTEGER NOT NULL REFERENCES tournament_participants(id),
+      score_a INTEGER,
+      score_b INTEGER,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','completed')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   return db;

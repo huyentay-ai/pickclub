@@ -1,0 +1,54 @@
+<%- include('../../partials/header', { title: 'Chia bảng - ' + tournament.name, user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>🏓 Chia bảng — <%= tournament.name %></h1>
+      <p class="text-muted">Kiểm tra bảng hạt giống theo Elo, có thể đổi bảng thủ công trước khi chốt lịch thi đấu.</p>
+    </div>
+    <div>
+      <a href="/admin/tournament/<%= tournament.id %>/export" class="btn btn-outline btn-sm">📊 Xuất Excel</a>
+      <a href="/admin/tournament" class="btn btn-outline btn-sm">← Quản lý giải đấu</a>
+    </div>
+  </div>
+
+  <% var allMembers = []; groups.forEach(function(g) { g.members.forEach(function(m) { allMembers.push({ participant_id: m.participant_id, full_name: m.full_name, group_label: g.group_label }); }); }); %>
+
+  <div class="tournament-groups-grid">
+    <% groups.forEach(function(g) { %>
+      <div class="group-card">
+        <div class="group-card-header">Bảng <%= g.group_label %> (<%= g.members.length %>/4)</div>
+        <div class="group-card-body">
+          <% g.members.forEach(function(m) { %>
+            <div class="group-seed-row">
+              <span class="group-seed-badge"><%= m.group_seed %></span>
+              <img src="/avatars/<%= m.avatar %>" class="admin-table-avatar" alt="">
+              <span><%= m.full_name %> <span class="text-muted text-sm">(Elo <%= Math.round(m.seed_elo) %>)</span></span>
+              <form action="/admin/tournament/<%= tournament.id %>/seed/swap" method="POST" style="margin-left:auto">
+                <input type="hidden" name="participant_id" value="<%= m.participant_id %>">
+                <select name="swap_with_id" class="form-input" style="padding:0.3rem 0.5rem;font-size:0.85rem" onchange="if(this.value) this.form.submit()">
+                  <option value="">↔ Đổi chỗ với...</option>
+                  <% allMembers.forEach(function(other) { if (other.participant_id !== m.participant_id) { %>
+                    <option value="<%= other.participant_id %>">Bảng <%= other.group_label %> — <%= other.full_name %></option>
+                  <% } }); %>
+                </select>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+
+  <% if (tournament.status === 'seeded') { %>
+    <div class="form-actions" style="margin-top:1.5rem">
+      <form action="/admin/tournament/<%= tournament.id %>/confirm" method="POST">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Chốt bảng đấu và sinh lịch thi đấu? Sau bước này không thể đổi bảng nữa.')">Chốt bảng &amp; sinh lịch thi đấu</button>
+      </form>
+    </div>
+  <% } else { %>
+    <div class="alert alert-info" style="margin-top:1.5rem">Lịch thi đấu đã được chốt. <a href="/admin/tournament/<%= tournament.id %>/matches">Xem lịch thi đấu</a></div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>
