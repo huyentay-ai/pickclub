@@ -24,6 +24,7 @@
               </div>
             </div>
             <span class="badge badge-<%= c.status %>"><%= c.status === 'scheduled' ? 'Đã lên lịch' : c.status === 'completed' ? 'Hoàn thành' : c.status === 'disputed' ? 'Tranh chấp' : c.status %></span>
+            <% if (c.challenge_type === 'singles') { %><span class="badge badge-singles">Đơn</span><% } %>
           </div>
           <div class="challenge-card-details">
             <span>📅 <%= c.match_date_fmt %></span>

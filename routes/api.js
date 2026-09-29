@@ -25,6 +25,26 @@ function formatDate(dateStr) {
   return `${days[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
 
+function getOrCreateSinglesTeam(userId) {
+  const existing = db.prepare(`
+    SELECT t.id FROM teams t
+    JOIN team_members tm ON tm.team_id = t.id
+    WHERE t.is_singles = 1 AND tm.user_id = ? AND t.status = 'active'
+    LIMIT 1
+  `).get(userId);
+  if (existing) return existing.id;
+
+  const user = db.prepare('SELECT id, full_name FROM users WHERE id = ?').get(userId);
+  if (!user) return null;
+
+  const result = db.prepare(
+    "INSERT INTO teams (name, type, captain_id, status, is_singles) VALUES (?, 'male', ?, 'active', 1)"
+  ).run(user.full_name, userId);
+  const teamId = result.lastInsertRowid;
+  db.prepare("INSERT INTO team_members (team_id, user_id, status) VALUES (?, ?, 'accepted')").run(teamId, userId);
+  return teamId;
+}
+
 // Search users
 router.get('/users/search', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
@@ -120,26 +140,47 @@ router.get('/results/today', (req, res) => {
 
 // Tạo thách đấu mới
 router.post('/challenges', requireAuthApi, (req, res) => {
-  const { challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail } = req.body;
+  const { challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, challenge_type, challenger_user_id, challenged_user_id } = req.body;
 
-  if (!challenger_team_id || !challenged_team_id || !match_date || !match_time) {
+  if (!match_date || !match_time) {
     return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin' });
   }
 
-  if (String(challenger_team_id) === String(challenged_team_id)) {
-    return res.status(400).json({ error: 'Không thể thách đấu chính đội mình' });
+  let challengerTeamId, challengedTeamId;
+
+  if (challenge_type === 'singles') {
+    if (!challenger_user_id || !challenged_user_id) {
+      return res.status(400).json({ error: 'Vui lòng chọn 2 người chơi' });
+    }
+    if (String(challenger_user_id) === String(challenged_user_id)) {
+      return res.status(400).json({ error: 'Không thể thách đấu chính mình' });
+    }
+    challengerTeamId = getOrCreateSinglesTeam(Number(challenger_user_id));
+    challengedTeamId = getOrCreateSinglesTeam(Number(challenged_user_id));
+    if (!challengerTeamId || !challengedTeamId) {
+      return res.status(404).json({ error: 'Người chơi không tồn tại' });
+    }
+  } else {
+    if (!challenger_team_id || !challenged_team_id) {
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin' });
+    }
+    if (String(challenger_team_id) === String(challenged_team_id)) {
+      return res.status(400).json({ error: 'Không thể thách đấu chính đội mình' });
+    }
+    challengerTeamId = challenger_team_id;
+    challengedTeamId = challenged_team_id;
   }
 
-  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(challenger_team_id);
-  const opponent = db.prepare('SELECT * FROM teams WHERE id = ?').get(challenged_team_id);
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(challengerTeamId);
+  const opponent = db.prepare('SELECT * FROM teams WHERE id = ?').get(challengedTeamId);
   if (!team || !opponent) {
-    return res.status(404).json({ error: 'Đội không tồn tại' });
+    return res.status(404).json({ error: challenge_type === 'singles' ? 'Người chơi không tồn tại' : 'Đội không tồn tại' });
   }
 
   const result = db.prepare(`
-    INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
-  `).run(challenger_team_id, challenged_team_id, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null);
+    INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status, challenge_type)
+    VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
+  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null, challenge_type || 'doubles');
 
   [team.captain_id, opponent.captain_id].forEach(captainId => {
     db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
@@ -150,17 +191,18 @@ router.post('/challenges', requireAuthApi, (req, res) => {
   });
 
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'}`, ip);
+  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
 
   res.status(201).json({
     ok: true,
     challenge: {
       id: result.lastInsertRowid,
-      challenger_team_id: Number(challenger_team_id),
-      challenged_team_id: Number(challenged_team_id),
+      challenger_team_id: Number(challengerTeamId),
+      challenged_team_id: Number(challengedTeamId),
       match_date, match_time,
       reward: reward || 'Một bữa sáng',
       reward_detail: reward_detail || null,
+      challenge_type: challenge_type || 'doubles',
       status: 'scheduled'
     }
   });

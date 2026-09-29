@@ -98,7 +98,7 @@ app.get('/', (req, res) => {
   const totalFund = playerPoints.reduce((sum, p) => sum + Math.max(0, p.points), 0);
   const stats = {
     totalMatches: dbConn.prepare("SELECT COUNT(*) as c FROM challenges WHERE status = 'completed'").get().c,
-    totalTeams: dbConn.prepare("SELECT COUNT(*) as c FROM teams WHERE status = 'active'").get().c,
+    totalTeams: dbConn.prepare("SELECT COUNT(*) as c FROM teams WHERE status = 'active' AND is_singles = 0").get().c,
     breakfastsWon: totalFund,
     activeChallenges: dbConn.prepare("SELECT COUNT(*) as c FROM challenges WHERE status = 'scheduled'").get().c,
   };
@@ -140,7 +140,7 @@ app.get('/leaderboard', (req, res) => {
   const totalFund = leaderboard.reduce((sum, p) => sum + p.points, 0);
 
   const completedMatches = dbConn.prepare(`
-    SELECT c.id, c.match_date, c.match_time, c.reward,
+    SELECT c.id, c.match_date, c.match_time, c.reward, c.challenge_type,
       c.challenger_team_id, c.challenged_team_id,
       t1.name as challenger_name, t2.name as challenged_name,
       tw.name as winner_name, mr.scores

@@ -141,6 +141,17 @@ function initDatabase() {
     );
   `);
 
+  // Migration: singles challenge support
+  const teamCols = db.prepare("PRAGMA table_info(teams)").all().map(c => c.name);
+  if (!teamCols.includes('is_singles')) {
+    db.exec("ALTER TABLE teams ADD COLUMN is_singles INTEGER DEFAULT 0");
+  }
+
+  const challengeCols = db.prepare("PRAGMA table_info(challenges)").all().map(c => c.name);
+  if (!challengeCols.includes('challenge_type')) {
+    db.exec("ALTER TABLE challenges ADD COLUMN challenge_type TEXT DEFAULT 'doubles'");
+  }
+
   return db;
 }
 

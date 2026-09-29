@@ -19,6 +19,26 @@ function getUserTeams(userId) {
   `).all(userId);
 }
 
+function getOrCreateSinglesTeam(userId) {
+  const existing = db.prepare(`
+    SELECT t.id FROM teams t
+    JOIN team_members tm ON tm.team_id = t.id
+    WHERE t.is_singles = 1 AND tm.user_id = ? AND t.status = 'active'
+    LIMIT 1
+  `).get(userId);
+  if (existing) return existing.id;
+
+  const user = db.prepare('SELECT id, full_name FROM users WHERE id = ?').get(userId);
+  if (!user) return null;
+
+  const result = db.prepare(
+    "INSERT INTO teams (name, type, captain_id, status, is_singles) VALUES (?, 'male', ?, 'active', 1)"
+  ).run(user.full_name, userId);
+  const teamId = result.lastInsertRowid;
+  db.prepare("INSERT INTO team_members (team_id, user_id, status) VALUES (?, ?, 'accepted')").run(teamId, userId);
+  return teamId;
+}
+
 // Helper: format date nicely
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -60,7 +80,7 @@ function getAllTeamsWithMembers() {
     FROM teams t
     JOIN team_members tm ON tm.team_id = t.id AND tm.status = 'accepted'
     JOIN users u ON u.id = tm.user_id
-    WHERE t.status = 'active'
+    WHERE t.status = 'active' AND t.is_singles = 0
     GROUP BY t.id
     ORDER BY t.name
   `).all();
@@ -69,36 +89,61 @@ function getAllTeamsWithMembers() {
 // Create challenge form
 router.get('/create', (req, res) => {
   const teams = getAllTeamsWithMembers();
-  res.render('challenges/create', { teams });
+  const users = db.prepare('SELECT id, full_name, avatar FROM users ORDER BY full_name').all();
+  res.render('challenges/create', { teams, users });
 });
 
 // Create challenge
 router.post('/create', (req, res) => {
-  const { challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail } = req.body;
+  const { challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, challenge_type, challenger_user_id, challenged_user_id } = req.body;
 
-  if (!challenger_team_id || !challenged_team_id || !match_date || !match_time) {
+  if (!match_date || !match_time) {
     req.session.flash = { type: 'error', message: 'Vui lòng điền đầy đủ thông tin' };
     return res.redirect('/challenges/create');
   }
 
-  if (challenger_team_id === challenged_team_id) {
-    req.session.flash = { type: 'error', message: 'Không thể thách đấu chính đội mình' };
-    return res.redirect('/challenges/create');
+  let challengerTeamId, challengedTeamId;
+
+  if (challenge_type === 'singles') {
+    if (!challenger_user_id || !challenged_user_id) {
+      req.session.flash = { type: 'error', message: 'Vui lòng chọn 2 người chơi' };
+      return res.redirect('/challenges/create');
+    }
+    if (challenger_user_id === challenged_user_id) {
+      req.session.flash = { type: 'error', message: 'Không thể thách đấu chính mình' };
+      return res.redirect('/challenges/create');
+    }
+    challengerTeamId = getOrCreateSinglesTeam(Number(challenger_user_id));
+    challengedTeamId = getOrCreateSinglesTeam(Number(challenged_user_id));
+    if (!challengerTeamId || !challengedTeamId) {
+      req.session.flash = { type: 'error', message: 'Người chơi không tồn tại' };
+      return res.redirect('/challenges/create');
+    }
+  } else {
+    if (!challenger_team_id || !challenged_team_id) {
+      req.session.flash = { type: 'error', message: 'Vui lòng chọn 2 đội' };
+      return res.redirect('/challenges/create');
+    }
+    if (challenger_team_id === challenged_team_id) {
+      req.session.flash = { type: 'error', message: 'Không thể thách đấu chính đội mình' };
+      return res.redirect('/challenges/create');
+    }
+    challengerTeamId = challenger_team_id;
+    challengedTeamId = challenged_team_id;
   }
 
-  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(challenger_team_id);
-  const opponent = db.prepare('SELECT * FROM teams WHERE id = ?').get(challenged_team_id);
+  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(challengerTeamId);
+  const opponent = db.prepare('SELECT * FROM teams WHERE id = ?').get(challengedTeamId);
   if (!team || !opponent) {
-    req.session.flash = { type: 'error', message: 'Đội không tồn tại' };
+    req.session.flash = { type: 'error', message: challenge_type === 'singles' ? 'Người chơi không tồn tại' : 'Đội không tồn tại' };
     return res.redirect('/challenges/create');
   }
 
   const result = db.prepare(`
-    INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
-  `).run(challenger_team_id, challenged_team_id, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null);
+    INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status, challenge_type)
+    VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
+  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null, challenge_type || 'doubles');
 
-  // Notify both captains
   [team.captain_id, opponent.captain_id].forEach(captainId => {
     db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
       captainId, 'challenge',
@@ -108,7 +153,7 @@ router.post('/create', (req, res) => {
   });
 
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'}`, ip);
+  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
   req.session.flash = { type: 'success', message: 'Đã lên lịch trận đấu!' };
   res.redirect('/challenges');
 });

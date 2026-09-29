@@ -30,6 +30,7 @@
       <thead>
         <tr>
           <th>#</th>
+          <th>Loại</th>
           <th>Đội thách đấu</th>
           <th>VS</th>
           <th>Đội bị thách đấu</th>
@@ -44,14 +45,15 @@
         <% challenges.forEach(function(c) { %>
         <tr class="<%= c.status === 'disputed' ? 'row-disputed' : '' %>">
           <td><%= c.id %></td>
+          <td><span class="badge <%= c.challenge_type === 'singles' ? 'badge-singles' : 'badge-doubles' %>"><%= c.challenge_type === 'singles' ? 'Đơn' : 'Đôi' %></span></td>
           <td>
             <strong><%= c.challenger_name %></strong>
-            <div class="text-muted text-sm"><%= c.challenger_members %></div>
+            <% if (c.challenge_type !== 'singles') { %><div class="text-muted text-sm"><%= c.challenger_members %></div><% } %>
           </td>
           <td class="text-center"><span class="vs-badge">VS</span></td>
           <td>
             <strong><%= c.challenged_name %></strong>
-            <div class="text-muted text-sm"><%= c.challenged_members %></div>
+            <% if (c.challenge_type !== 'singles') { %><div class="text-muted text-sm"><%= c.challenged_members %></div><% } %>
           </td>
           <td><%= c.match_date_fmt %><br><span class="text-muted"><%= c.match_time %></span></td>
           <td><%= c.reward %></td>
@@ -98,23 +100,50 @@
       <button type="button" onclick="closeCreateChallengeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
     </div>
     <form action="/admin/challenges/create" method="POST">
-      <div class="form-group">
-        <label class="form-label">Đội thách đấu *</label>
-        <select name="challenger_team_id" class="form-input" required>
-          <option value="">-- Chọn đội --</option>
-          <% teams.forEach(function(t) { %>
-            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-          <% }); %>
-        </select>
+      <input type="hidden" name="challenge_type" id="adminChallengeType" value="doubles">
+      <div class="challenge-type-toggle" style="margin-bottom:1rem">
+        <button type="button" class="btn btn-primary btn-sm" id="adminBtnDoubles" onclick="setAdminChallengeType('doubles')">Đôi</button>
+        <button type="button" class="btn btn-outline btn-sm" id="adminBtnSingles" onclick="setAdminChallengeType('singles')">Đơn</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Đội bị thách đấu *</label>
-        <select name="challenged_team_id" class="form-input" required>
-          <option value="">-- Chọn đội --</option>
-          <% teams.forEach(function(t) { %>
-            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-          <% }); %>
-        </select>
+      <div id="adminDoublesFields">
+        <div class="form-group">
+          <label class="form-label">Đội thách đấu *</label>
+          <select name="challenger_team_id" id="adminChallengerTeam" class="form-input" required>
+            <option value="">-- Chọn đội --</option>
+            <% teams.forEach(function(t) { %>
+              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Đội bị thách đấu *</label>
+          <select name="challenged_team_id" id="adminChallengedTeam" class="form-input" required>
+            <option value="">-- Chọn đội --</option>
+            <% teams.forEach(function(t) { %>
+              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      <div id="adminSinglesFields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Người thách đấu *</label>
+          <select name="challenger_user_id" id="adminChallengerUser" class="form-input">
+            <option value="">-- Chọn người chơi --</option>
+            <% if (typeof users !== 'undefined') { users.forEach(function(u) { %>
+              <option value="<%= u.id %>"><%= u.full_name %></option>
+            <% }); } %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Người bị thách đấu *</label>
+          <select name="challenged_user_id" id="adminChallengedUser" class="form-input">
+            <option value="">-- Chọn người chơi --</option>
+            <% if (typeof users !== 'undefined') { users.forEach(function(u) { %>
+              <option value="<%= u.id %>"><%= u.full_name %></option>
+            <% }); } %>
+          </select>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="form-group" style="margin:0">
@@ -186,6 +215,19 @@
 </div>
 
 <script>
+function setAdminChallengeType(type) {
+  document.getElementById('adminChallengeType').value = type;
+  var isDoubles = type === 'doubles';
+  document.getElementById('adminDoublesFields').style.display = isDoubles ? '' : 'none';
+  document.getElementById('adminSinglesFields').style.display = isDoubles ? 'none' : '';
+  document.getElementById('adminBtnDoubles').className = isDoubles ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+  document.getElementById('adminBtnSingles').className = isDoubles ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm';
+  document.getElementById('adminChallengerTeam').required = isDoubles;
+  document.getElementById('adminChallengedTeam').required = isDoubles;
+  document.getElementById('adminChallengerUser').required = !isDoubles;
+  document.getElementById('adminChallengedUser').required = !isDoubles;
+}
+
 function openCreateChallengeModal() {
   document.getElementById('createChallengeModal').style.display = 'flex';
 }

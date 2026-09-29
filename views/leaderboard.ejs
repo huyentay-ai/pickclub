@@ -126,6 +126,7 @@
             </div>
             <div class="match-center">
               <span class="match-date" style="font-size:0.8rem;color:var(--muted)"><%= m.match_time %></span>
+              <% if (m.challenge_type === 'singles') { %><span class="badge badge-singles" style="font-size:0.65rem">Đơn</span><% } %>
               <span class="match-reward">🍜 <%= m.reward %></span>
             </div>
             <div class="match-team-side match-team-right <%= m.winner_name === m.challenged_name ? 'match-team-winner' : '' %>">

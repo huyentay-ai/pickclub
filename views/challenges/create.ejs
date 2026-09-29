@@ -3,31 +3,64 @@
 <div class="container">
   <div class="page-header">
     <h1>Tạo thách đấu</h1>
-    <p class="text-muted">Chọn 2 đội và cược bữa sáng!</p>
+    <p class="text-muted">Chọn loại trận và cược bữa sáng!</p>
   </div>
 
   <div class="form-card">
+    <div class="challenge-type-toggle">
+      <button type="button" class="btn btn-primary" id="btnDoubles" onclick="setChallengeType('doubles')">Đôi</button>
+      <button type="button" class="btn btn-outline" id="btnSingles" onclick="setChallengeType('singles')">Đơn</button>
+    </div>
+
     <form action="/challenges/create" method="POST" id="createChallengeForm">
-      <div class="form-group">
-        <label for="challengerTeam" class="form-label">Đội thách đấu</label>
-        <select id="challengerTeam" name="challenger_team_id" class="form-input" required>
-          <option value="">-- Chọn đội --</option>
-          <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
-            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-          <% }); } %>
-        </select>
+      <input type="hidden" name="challenge_type" id="challengeType" value="doubles">
+
+      <div id="doublesFields">
+        <div class="form-group">
+          <label for="challengerTeam" class="form-label">Đội thách đấu</label>
+          <select id="challengerTeam" name="challenger_team_id" class="form-input" required>
+            <option value="">-- Chọn đội --</option>
+            <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
+              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+            <% }); } %>
+          </select>
+        </div>
+
+        <div class="vs-divider">VS</div>
+
+        <div class="form-group">
+          <label for="challengedTeam" class="form-label">Đội bị thách đấu</label>
+          <select id="challengedTeam" name="challenged_team_id" class="form-input" required>
+            <option value="">-- Chọn đội --</option>
+            <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
+              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
+            <% }); } %>
+          </select>
+        </div>
       </div>
 
-      <div class="vs-divider">VS</div>
+      <div id="singlesFields" style="display:none">
+        <div class="form-group">
+          <label for="challengerUser" class="form-label">Người thách đấu</label>
+          <select id="challengerUser" name="challenger_user_id" class="form-input">
+            <option value="">-- Chọn người chơi --</option>
+            <% if (typeof users !== 'undefined') { users.forEach(function(u) { %>
+              <option value="<%= u.id %>"><%= u.full_name %></option>
+            <% }); } %>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="challengedTeam" class="form-label">Đội bị thách đấu</label>
-        <select id="challengedTeam" name="challenged_team_id" class="form-input" required>
-          <option value="">-- Chọn đội --</option>
-          <% if (typeof teams !== 'undefined') { teams.forEach(function(t) { %>
-            <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-          <% }); } %>
-        </select>
+        <div class="vs-divider">VS</div>
+
+        <div class="form-group">
+          <label for="challengedUser" class="form-label">Người bị thách đấu</label>
+          <select id="challengedUser" name="challenged_user_id" class="form-input">
+            <option value="">-- Chọn người chơi --</option>
+            <% if (typeof users !== 'undefined') { users.forEach(function(u) { %>
+              <option value="<%= u.id %>"><%= u.full_name %></option>
+            <% }); } %>
+          </select>
+        </div>
       </div>
 
       <div class="form-row">
@@ -88,10 +121,31 @@
 </style>
 
 <script>
+function setChallengeType(type) {
+  document.getElementById('challengeType').value = type;
+  var isDoubles = type === 'doubles';
+  document.getElementById('doublesFields').style.display = isDoubles ? '' : 'none';
+  document.getElementById('singlesFields').style.display = isDoubles ? 'none' : '';
+  document.getElementById('btnDoubles').className = isDoubles ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('btnSingles').className = isDoubles ? 'btn btn-outline' : 'btn btn-primary';
+  document.getElementById('challengerTeam').required = isDoubles;
+  document.getElementById('challengedTeam').required = isDoubles;
+  document.getElementById('challengerUser').required = !isDoubles;
+  document.getElementById('challengedUser').required = !isDoubles;
+}
+
 document.getElementById('challengerTeam').addEventListener('change', function() {
-  const val = this.value;
-  const opts = document.getElementById('challengedTeam').options;
-  for (let i = 0; i < opts.length; i++) {
+  var val = this.value;
+  var opts = document.getElementById('challengedTeam').options;
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].disabled = (opts[i].value === val && val !== '');
+  }
+});
+
+document.getElementById('challengerUser').addEventListener('change', function() {
+  var val = this.value;
+  var opts = document.getElementById('challengedUser').options;
+  for (var i = 0; i < opts.length; i++) {
     opts[i].disabled = (opts[i].value === val && val !== '');
   }
 });

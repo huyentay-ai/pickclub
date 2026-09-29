@@ -15,6 +15,7 @@ router.get('/', (req, res) => {
     SELECT t.*, u.full_name AS captain_name, u.avatar AS captain_avatar
     FROM teams t
     JOIN users u ON u.id = t.captain_id
+    WHERE t.is_singles = 0
     ORDER BY t.name
   `).all();
 

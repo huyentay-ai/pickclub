@@ -667,6 +667,9 @@ a:hover { color: var(--primary-dark); }
 .badge-declined { background: #fee2e2; color: #b91c1c; }
 .badge-disputed { background: #ffedd5; color: #9a3412; }
 .badge-completed { background: #d1fae5; color: #065f46; }
+.badge-singles { background: #fef3c7; color: #92400e; }
+.badge-doubles { background: #dbeafe; color: #1e40af; }
+.challenge-type-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
 .badge-captain { background: #fef9c3; color: #854d0e; }
 .badge-lg { font-size: 0.85rem; padding: 0.35rem 1rem; }
 

@@ -122,6 +122,7 @@
                 <% } else { %>
                   <span class="badge badge-scheduled">Đã lên lịch</span>
                 <% } %>
+                <% if (c.challenge_type === 'singles') { %><span class="badge badge-singles" style="font-size:0.65rem">Đơn</span><% } %>
                 <span class="match-date"><%= c.match_date.split('-').reverse().join('/') %></span>
                 <span class="match-reward">🍜 <%= c.reward %></span>
               </div>
