@@ -99,7 +99,7 @@
       <h3 style="margin:0">⚔️ Tạo thách đấu nhanh</h3>
       <button type="button" onclick="closeCreateChallengeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1">×</button>
     </div>
-    <form action="/admin/challenges/create" method="POST">
+    <form id="createChallengeForm" action="/admin/challenges/create" method="POST">
       <input type="hidden" name="challenge_type" id="adminChallengeType" value="doubles">
       <div class="challenge-type-toggle" style="margin-bottom:1rem">
         <button type="button" class="btn btn-primary btn-sm" id="adminBtnDoubles" onclick="setAdminChallengeType('doubles')">Đôi</button>
@@ -108,21 +108,33 @@
       <div id="adminDoublesFields">
         <div class="form-group">
           <label class="form-label">Đội thách đấu *</label>
-          <select name="challenger_team_id" id="adminChallengerTeam" class="form-input" required>
-            <option value="">-- Chọn đội --</option>
-            <% teams.forEach(function(t) { %>
-              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-            <% }); %>
-          </select>
+          <input type="hidden" name="challenger_team_id" id="adminChallengerTeamId">
+          <div class="search-input-wrapper">
+            <div style="display:flex;gap:0">
+              <input type="text" id="adminChallengerTeamSearch" class="form-input" placeholder="Gõ tên đội hoặc tên thành viên..." autocomplete="off" style="border-radius:var(--radius) 0 0 var(--radius);flex:1">
+              <button type="button" class="btn btn-outline team-dropdown-toggle" onclick="toggleAllTeams('Challenger')" style="border-radius:0 var(--radius) var(--radius) 0;border-left:0;padding:0 0.6rem">▼</button>
+            </div>
+            <div class="search-results" id="adminChallengerTeamResults"></div>
+          </div>
+          <div class="selected-teammate" id="adminChallengerTeamSelected" style="display:none;margin-top:0.5rem">
+            <span id="adminChallengerTeamName"></span>
+            <button type="button" class="btn-remove" onclick="clearTeamSelection('Challenger')">&times;</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Đội bị thách đấu *</label>
-          <select name="challenged_team_id" id="adminChallengedTeam" class="form-input" required>
-            <option value="">-- Chọn đội --</option>
-            <% teams.forEach(function(t) { %>
-              <option value="<%= t.id %>"><%= t.name %> (<%= t.member_names %>)</option>
-            <% }); %>
-          </select>
+          <input type="hidden" name="challenged_team_id" id="adminChallengedTeamId">
+          <div class="search-input-wrapper">
+            <div style="display:flex;gap:0">
+              <input type="text" id="adminChallengedTeamSearch" class="form-input" placeholder="Gõ tên đội hoặc tên thành viên..." autocomplete="off" style="border-radius:var(--radius) 0 0 var(--radius);flex:1">
+              <button type="button" class="btn btn-outline team-dropdown-toggle" onclick="toggleAllTeams('Challenged')" style="border-radius:0 var(--radius) var(--radius) 0;border-left:0;padding:0 0.6rem">▼</button>
+            </div>
+            <div class="search-results" id="adminChallengedTeamResults"></div>
+          </div>
+          <div class="selected-teammate" id="adminChallengedTeamSelected" style="display:none;margin-top:0.5rem">
+            <span id="adminChallengedTeamName"></span>
+            <button type="button" class="btn-remove" onclick="clearTeamSelection('Challenged')">&times;</button>
+          </div>
         </div>
       </div>
       <div id="adminSinglesFields" style="display:none">
@@ -157,7 +169,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Kèo</label>
-        <input type="text" name="reward" class="form-input" placeholder="Một bữa sáng" value="Một bữa sáng">
+        <input type="text" name="reward" class="form-input" placeholder="Bữa sáng" value="Bữa sáng">
       </div>
       <div class="form-group">
         <label class="form-label">Chi tiết kèo <span style="font-weight:400;text-transform:none;letter-spacing:0">(tùy chọn)</span></label>
@@ -168,6 +180,41 @@
         <button type="submit" class="btn btn-primary">Tạo thách đấu</button>
       </div>
     </form>
+    <div id="inlineResultSection" style="display:none">
+      <hr style="border-color:var(--line);margin:1.25rem 0">
+      <h3 style="margin:0 0 1rem">⚡ Cập nhật kết quả</h3>
+      <div class="form-group">
+        <label class="form-label">Tỉ số (VD: 11-7, 9-11, 11-8)</label>
+        <input type="text" id="inline_scores" class="form-input" placeholder="11-7, 11-9">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Đội thắng</label>
+        <div class="admin-winner-options">
+          <label class="admin-winner-option">
+            <input type="radio" name="inline_winner_team_id" id="inline_winner_a">
+            <span class="admin-winner-card" tabindex="0" role="radio" aria-checked="false">
+              <span class="admin-winner-name" id="inline_winner_a_name"></span>
+            </span>
+          </label>
+          <label class="admin-winner-option">
+            <input type="radio" name="inline_winner_team_id" id="inline_winner_b">
+            <span class="admin-winner-card" tabindex="0" role="radio" aria-checked="false">
+              <span class="admin-winner-name" id="inline_winner_b_name"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="admin-checkbox">
+          <input type="checkbox" id="inline_reward_paid" value="1">
+          <span>Đội thua đã thanh toán bữa sáng</span>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" onclick="closeCreateChallengeModal()" class="btn btn-outline">Đóng</button>
+        <button type="button" onclick="submitInlineResult()" class="btn btn-primary">Chốt kết quả</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -188,13 +235,13 @@
         <div class="admin-winner-options">
           <label class="admin-winner-option">
             <input type="radio" name="winner_team_id" id="result_winner_a" required>
-            <span class="admin-winner-card">
+            <span class="admin-winner-card" tabindex="0" role="radio" aria-checked="false">
               <span class="admin-winner-name" id="result_winner_a_name"></span>
             </span>
           </label>
           <label class="admin-winner-option">
             <input type="radio" name="winner_team_id" id="result_winner_b">
-            <span class="admin-winner-card">
+            <span class="admin-winner-card" tabindex="0" role="radio" aria-checked="false">
               <span class="admin-winner-name" id="result_winner_b_name"></span>
             </span>
           </label>
@@ -215,6 +262,121 @@
 </div>
 
 <script>
+var createdChallengeId = null;
+var selectedTeamNames = { Challenger: '', Challenged: '' };
+var allTeams = <%- JSON.stringify(teams) %>;
+
+function renderTeamResults(results, teams) {
+  results.innerHTML = teams.map(function(t, i) {
+    return '<div class="search-result-item' + (i === 0 ? ' active' : '') + '" data-id="' + t.id + '" data-name="' + t.name + '">' +
+      '<strong>' + t.name + '</strong>' +
+      '<div class="text-muted text-sm">' + t.member_names + '</div>' +
+      '</div>';
+  }).join('');
+  if (teams.length) results.classList.add('show');
+  else results.classList.remove('show');
+}
+
+function selectTeamItem(item, prefix) {
+  var hiddenInput = document.getElementById('admin' + prefix + 'TeamId');
+  var selected = document.getElementById('admin' + prefix + 'TeamSelected');
+  var nameEl = document.getElementById('admin' + prefix + 'TeamName');
+  var input = document.getElementById('admin' + prefix + 'TeamSearch');
+  var results = document.getElementById('admin' + prefix + 'TeamResults');
+
+  hiddenInput.value = item.dataset.id;
+  nameEl.textContent = item.dataset.name;
+  selectedTeamNames[prefix] = item.dataset.name;
+  selected.style.display = 'inline-flex';
+  input.value = '';
+  input.style.display = 'none';
+  input.closest('.search-input-wrapper').querySelector('.team-dropdown-toggle').style.display = 'none';
+  results.classList.remove('show');
+}
+
+function setupTeamSearch(prefix) {
+  var input = document.getElementById('admin' + prefix + 'TeamSearch');
+  var results = document.getElementById('admin' + prefix + 'TeamResults');
+  if (!input || !results) return;
+
+  var debounce;
+  input.addEventListener('input', function() {
+    clearTimeout(debounce);
+    var q = input.value.trim();
+    if (q.length < 1) { results.classList.remove('show'); return; }
+    debounce = setTimeout(function() {
+      fetch('/api/teams/search?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(teams) { renderTeamResults(results, teams); })
+        .catch(function() { results.classList.remove('show'); });
+    }, 300);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (!results.classList.contains('show')) return;
+    var items = results.querySelectorAll('.search-result-item');
+    if (!items.length) return;
+    var current = results.querySelector('.search-result-item.active');
+    var idx = current ? Array.prototype.indexOf.call(items, current) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (current) current.classList.remove('active');
+      idx = (idx + 1) % items.length;
+      items[idx].classList.add('active');
+      items[idx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (current) current.classList.remove('active');
+      idx = idx <= 0 ? items.length - 1 : idx - 1;
+      items[idx].classList.add('active');
+      items[idx].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Tab' || e.key === 'Enter') {
+      if (current) {
+        e.preventDefault();
+        selectTeamItem(current, prefix);
+      }
+    } else if (e.key === 'Escape') {
+      results.classList.remove('show');
+    }
+  });
+
+  results.addEventListener('click', function(e) {
+    var item = e.target.closest('.search-result-item');
+    if (!item) return;
+    selectTeamItem(item, prefix);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !results.contains(e.target) && !e.target.closest('.team-dropdown-toggle')) {
+      results.classList.remove('show');
+    }
+  });
+}
+
+function toggleAllTeams(prefix) {
+  var results = document.getElementById('admin' + prefix + 'TeamResults');
+  if (results.classList.contains('show')) {
+    results.classList.remove('show');
+  } else {
+    renderTeamResults(results, allTeams);
+  }
+}
+
+function clearTeamSelection(prefix) {
+  document.getElementById('admin' + prefix + 'TeamId').value = '';
+  document.getElementById('admin' + prefix + 'TeamSelected').style.display = 'none';
+  document.getElementById('admin' + prefix + 'TeamName').textContent = '';
+  var input = document.getElementById('admin' + prefix + 'TeamSearch');
+  input.style.display = '';
+  input.value = '';
+  input.closest('.search-input-wrapper').querySelector('.team-dropdown-toggle').style.display = '';
+  selectedTeamNames[prefix] = '';
+}
+
+setupTeamSearch('Challenger');
+setupTeamSearch('Challenged');
+
 function setAdminChallengeType(type) {
   document.getElementById('adminChallengeType').value = type;
   var isDoubles = type === 'doubles';
@@ -222,21 +384,135 @@ function setAdminChallengeType(type) {
   document.getElementById('adminSinglesFields').style.display = isDoubles ? 'none' : '';
   document.getElementById('adminBtnDoubles').className = isDoubles ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
   document.getElementById('adminBtnSingles').className = isDoubles ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm';
-  document.getElementById('adminChallengerTeam').required = isDoubles;
-  document.getElementById('adminChallengedTeam').required = isDoubles;
   document.getElementById('adminChallengerUser').required = !isDoubles;
   document.getElementById('adminChallengedUser').required = !isDoubles;
 }
 
 function openCreateChallengeModal() {
+  document.querySelector('#createChallengeForm input[name="match_date"]').valueAsDate = new Date();
   document.getElementById('createChallengeModal').style.display = 'flex';
 }
+
 function closeCreateChallengeModal() {
   document.getElementById('createChallengeModal').style.display = 'none';
+  resetCreateModal();
 }
+
+function resetCreateModal() {
+  var form = document.getElementById('createChallengeForm');
+  form.style.display = '';
+  form.reset();
+  document.getElementById('inlineResultSection').style.display = 'none';
+  clearTeamSelection('Challenger');
+  clearTeamSelection('Challenged');
+  createdChallengeId = null;
+  document.getElementById('inline_scores').value = '';
+  document.getElementById('inline_reward_paid').checked = false;
+  var radios = document.querySelectorAll('input[name="inline_winner_team_id"]');
+  radios.forEach(function(r) { r.checked = false; });
+}
+
 document.getElementById('createChallengeModal').addEventListener('click', function(e) {
   if (e.target === this) closeCreateChallengeModal();
 });
+
+document.getElementById('createChallengeForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = this;
+  var type = document.getElementById('adminChallengeType').value;
+
+  if (type === 'doubles') {
+    if (!document.getElementById('adminChallengerTeamId').value || !document.getElementById('adminChallengedTeamId').value) {
+      alert('Vui lòng chọn 2 đội');
+      return;
+    }
+    if (document.getElementById('adminChallengerTeamId').value === document.getElementById('adminChallengedTeamId').value) {
+      alert('Không thể thách đấu chính đội mình');
+      return;
+    }
+  }
+
+  var formData = new FormData(form);
+  var body = {};
+  formData.forEach(function(v, k) { body[k] = v; });
+
+  var submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Đang tạo...';
+
+  fetch('/api/challenges', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(res) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Tạo thách đấu';
+    if (!res.ok) {
+      alert(res.data.error || 'Có lỗi xảy ra');
+      return;
+    }
+    var c = res.data.challenge;
+    createdChallengeId = c.id;
+
+    form.style.display = 'none';
+
+    var challengerName = selectedTeamNames.Challenger || document.querySelector('#adminChallengerUser option:checked')?.textContent || 'Đội A';
+    var challengedName = selectedTeamNames.Challenged || document.querySelector('#adminChallengedUser option:checked')?.textContent || 'Đội B';
+
+    document.getElementById('inline_winner_a').value = c.challenger_team_id;
+    document.getElementById('inline_winner_a_name').textContent = challengerName;
+    document.getElementById('inline_winner_b').value = c.challenged_team_id;
+    document.getElementById('inline_winner_b_name').textContent = challengedName;
+    document.getElementById('inlineResultSection').style.display = '';
+  })
+  .catch(function() {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Tạo thách đấu';
+    alert('Lỗi kết nối');
+  });
+});
+
+function submitInlineResult() {
+  if (!createdChallengeId) return;
+  var scores = document.getElementById('inline_scores').value.trim();
+  if (!scores) { alert('Vui lòng nhập tỉ số'); return; }
+
+  var winnerRadio = document.querySelector('input[name="inline_winner_team_id"]:checked');
+  if (!winnerRadio) { alert('Vui lòng chọn đội thắng'); return; }
+
+  if (!confirm('Xác nhận chốt kết quả trận đấu này?')) return;
+
+  var btn = document.querySelector('#inlineResultSection .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Đang xử lý...';
+
+  fetch('/api/admin/challenges/' + createdChallengeId + '/result', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      scores: scores,
+      winner_team_id: Number(winnerRadio.value),
+      reward_paid: document.getElementById('inline_reward_paid').checked
+    })
+  })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(res) {
+    btn.disabled = false;
+    btn.textContent = 'Chốt kết quả';
+    if (!res.ok) {
+      alert(res.data.error || 'Có lỗi xảy ra');
+      return;
+    }
+    location.reload();
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Chốt kết quả';
+    alert('Lỗi kết nối');
+  });
+}
 
 function openResultModal(c) {
   document.getElementById('resultModalTitle').textContent = '⚡ Cập nhật kết quả trận #' + c.id;
@@ -246,8 +522,12 @@ function openResultModal(c) {
   document.getElementById('result_winner_a_name').textContent = c.challenger_name;
   document.getElementById('result_winner_b').value = c.challenged_team_id;
   document.getElementById('result_winner_b_name').textContent = c.challenged_name;
-  document.getElementById('result_winner_a').checked = c.winner_team_id === c.challenger_team_id;
-  document.getElementById('result_winner_b').checked = c.winner_team_id === c.challenged_team_id;
+  var aChecked = c.winner_team_id === c.challenger_team_id;
+  var bChecked = c.winner_team_id === c.challenged_team_id;
+  document.getElementById('result_winner_a').checked = aChecked;
+  document.getElementById('result_winner_b').checked = bChecked;
+  document.getElementById('result_winner_a').nextElementSibling.setAttribute('aria-checked', String(aChecked));
+  document.getElementById('result_winner_b').nextElementSibling.setAttribute('aria-checked', String(bChecked));
   document.getElementById('resultModal').style.display = 'flex';
 }
 function closeResultModal() {
@@ -256,6 +536,26 @@ function closeResultModal() {
 document.getElementById('resultModal').addEventListener('click', function(e) {
   if (e.target === this) closeResultModal();
 });
+
+document.querySelectorAll('.admin-winner-card[tabindex]').forEach(function(card) {
+  card.addEventListener('keydown', function(e) {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      selectWinnerCard(this);
+    }
+  });
+  card.addEventListener('click', function() {
+    selectWinnerCard(this);
+  });
+});
+function selectWinnerCard(card) {
+  var radio = card.parentElement.querySelector('input[type="radio"]');
+  radio.checked = true;
+  radio.dispatchEvent(new Event('change'));
+  card.parentElement.parentElement.querySelectorAll('.admin-winner-card').forEach(function(c) {
+    c.setAttribute('aria-checked', String(c === card));
+  });
+}
 </script>
 
 <%- include('../partials/footer') %>

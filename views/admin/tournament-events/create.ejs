@@ -1,0 +1,86 @@
+<%- include('../../partials/header', { title: 'Tạo giải đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Tạo giải đấu mới</h1>
+    <a href="/admin/tournament-events" class="btn btn-outline btn-sm">← Thông tin giải đấu</a>
+  </div>
+
+  <div class="form-card">
+    <form action="/admin/tournament-events/create" method="POST">
+      <div class="form-group">
+        <label for="name" class="form-label">Tên giải đấu *</label>
+        <input type="text" id="name" name="name" class="form-input" placeholder="VD: Giải Pickleball mở rộng 2026" required>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+        <div class="form-group">
+          <label for="event_date" class="form-label">Ngày</label>
+          <input type="date" id="event_date" name="event_date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="event_time" class="form-label">Giờ</label>
+          <input type="time" id="event_time" name="event_time" class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="location" class="form-label">Địa điểm</label>
+        <input type="text" id="location" name="location" class="form-input" placeholder="VD: Sân DinkZone, 64 ngõ 124 Vĩnh Tuy">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đội tham gia — đã chọn <span id="selectedTeamCount">0</span> đội</label>
+        <div class="participant-checklist">
+          <% teams.forEach(function(t) { %>
+            <label class="admin-checkbox">
+              <input type="checkbox" name="teams" value="<%= t.id %>" class="team-check">
+              <span><%= t.name %> <% if (t.member_names) { %><span class="text-muted text-sm">(<%= t.member_names %>)</span><% } %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="rules" class="form-label">Điều lệ giải</label>
+        <textarea id="rules" name="rules" class="form-input" rows="6" placeholder="Nhập điều lệ giải đấu..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="prizes" class="form-label">Giải thưởng</label>
+        <textarea id="prizes" name="prizes" class="form-input" rows="4" placeholder="VD: Vô địch: 2 triệu, Hạng 2: 1 triệu..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin/tournament-events" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Tạo giải đấu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.participant-checklist {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+.participant-checklist .admin-checkbox { padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.participant-checklist .admin-checkbox:last-child { border-bottom: none; }
+</style>
+
+<script>
+(function() {
+  var checks = document.querySelectorAll('.team-check');
+  var counter = document.getElementById('selectedTeamCount');
+  function update() {
+    counter.textContent = document.querySelectorAll('.team-check:checked').length;
+  }
+  checks.forEach(function(c) { c.addEventListener('change', update); });
+  update();
+})();
+</script>
+
+<%- include('../../partials/footer') %>

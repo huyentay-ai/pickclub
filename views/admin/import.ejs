@@ -1,0 +1,29 @@
+<%- include('../partials/header', { title: 'Import Excel', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>📥 Import kết quả từ Excel</h1>
+    <a href="/admin" class="btn btn-outline btn-sm">← Quản trị</a>
+  </div>
+
+  <div class="card" style="max-width:600px">
+    <p class="text-muted" style="margin-bottom:1rem">Upload file Excel đã xuất từ hệ thống. Hệ thống sẽ đọc sheet <strong>"Kết quả trận đấu"</strong> và cập nhật tỉ số, đội thắng cho các trận có ID tương ứng.</p>
+    <ul class="text-muted text-sm" style="margin-bottom:1.5rem;padding-left:1.25rem">
+      <li>Chỉ cập nhật dòng có tỉ số — dòng trống sẽ bỏ qua</li>
+      <li>Trận đã có kết quả sẽ bị ghi đè</li>
+      <li>Trận cập nhật sẽ tự động chuyển sang trạng thái "Hoàn thành"</li>
+    </ul>
+    <form action="/admin/import" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Chọn file Excel (.xlsx)</label>
+        <input type="file" name="file" class="form-input" accept=".xlsx" required>
+      </div>
+      <div class="form-actions">
+        <a href="/admin" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Import sẽ ghi đè kết quả các trận có trong file. Tiếp tục?')">Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

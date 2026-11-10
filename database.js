@@ -139,6 +139,29 @@ function initDatabase() {
       status TEXT DEFAULT 'pending' CHECK(status IN ('pending','completed')),
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS tournament_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      event_date TEXT,
+      event_time TEXT,
+      location TEXT,
+      rules TEXT,
+      prizes TEXT,
+      champion_team_id INTEGER REFERENCES teams(id),
+      runner_up_team_id INTEGER REFERENCES teams(id),
+      third_place_team_id INTEGER REFERENCES teams(id),
+      status TEXT DEFAULT 'upcoming' CHECK(status IN ('upcoming','ongoing','completed')),
+      created_by INTEGER REFERENCES users(id),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS tournament_event_teams (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id INTEGER NOT NULL REFERENCES tournament_events(id) ON DELETE CASCADE,
+      team_id INTEGER NOT NULL REFERENCES teams(id),
+      UNIQUE(event_id, team_id)
+    );
   `);
 
   // Migration: singles challenge support

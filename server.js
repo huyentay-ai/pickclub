@@ -48,10 +48,12 @@ const authRoutes = require('./routes/auth');
 app.use('/', authRoutes);
 app.use('/teams', require('./routes/teams'));
 app.use('/challenges', require('./routes/challenges'));
+app.use('/tournament/events', require('./routes/tournament-events'));
 app.use('/tournament', require('./routes/tournament'));
 app.use('/api', require('./routes/api'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin/tournament', require('./routes/admin-tournament'));
+app.use('/admin/tournament-events', require('./routes/admin-tournament-events'));
 
 // Home page
 app.get('/', (req, res) => {

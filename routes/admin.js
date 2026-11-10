@@ -32,6 +32,15 @@ const uploadAvatar = multer({
   }
 });
 
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.originalname.endsWith('.xlsx')) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file .xlsx'));
+  }
+});
+
 function requireAdmin(req, res, next) {
   if (!req.session.user || !req.session.user.is_admin) {
     req.session.flash = { type: 'error', message: 'Bạn không có quyền truy cập trang này' };
@@ -198,6 +207,85 @@ router.get('/export', async (req, res) => {
   res.end();
 });
 
+// Import match results from Excel
+router.get('/import', (req, res) => {
+  res.render('admin/import');
+});
+
+router.post('/import', uploadExcel.single('file'), async (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+  if (!req.file) {
+    req.session.flash = { type: 'error', message: 'Vui lòng chọn file .xlsx' };
+    return res.redirect('/admin/import');
+  }
+
+  try {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+
+    const sheet = workbook.getWorksheet('Kết quả trận đấu');
+    if (!sheet) {
+      req.session.flash = { type: 'error', message: 'Không tìm thấy sheet "Kết quả trận đấu" trong file' };
+      return res.redirect('/admin/import');
+    }
+
+    let updated = 0, skipped = 0;
+
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      const id = row.getCell(1).value;
+      const scores = row.getCell(8).value;
+      const winnerName = row.getCell(9).value;
+      const rewardPaid = row.getCell(10).value;
+
+      if (!id || !scores || !String(scores).trim()) {
+        skipped++;
+        return;
+      }
+
+      const challenge = db.prepare(`
+        SELECT c.*, t1.name AS challenger_name, t2.name AS challenged_name
+        FROM challenges c
+        JOIN teams t1 ON t1.id = c.challenger_team_id
+        JOIN teams t2 ON t2.id = c.challenged_team_id
+        WHERE c.id = ?
+      `).get(id);
+
+      if (!challenge) {
+        skipped++;
+        return;
+      }
+
+      let winnerId = null;
+      if (winnerName && String(winnerName).trim()) {
+        const wn = String(winnerName).trim();
+        if (wn === challenge.challenger_name) winnerId = challenge.challenger_team_id;
+        else if (wn === challenge.challenged_name) winnerId = challenge.challenged_team_id;
+      }
+
+      const rewardPaidVal = (rewardPaid === 'Có' || rewardPaid === 1) ? 1 : 0;
+
+      db.prepare('DELETE FROM match_results WHERE challenge_id = ?').run(id);
+      db.prepare(`
+        INSERT INTO match_results (challenge_id, reporter_team_id, scores, winner_team_id, reward_paid)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(id, challenge.challenger_team_id, String(scores).trim(), winnerId, rewardPaidVal);
+      db.prepare("UPDATE challenges SET status = 'completed' WHERE id = ?").run(id);
+
+      updated++;
+    });
+
+    log(req.session.user.id, 'admin_import_excel', `Cập nhật ${updated} trận, bỏ qua ${skipped} dòng`, ip);
+    req.session.flash = { type: 'success', message: `Import thành công: ${updated} trận cập nhật, ${skipped} dòng bỏ qua` };
+  } catch (err) {
+    req.session.flash = { type: 'error', message: `Lỗi đọc file Excel: ${err.message}` };
+  }
+
+  res.redirect('/admin');
+});
+
 // Trigger the daily Zalo notification bot
 const BOT_NOTIFY_URL = process.env.BOT_NOTIFY_URL;
 
@@ -328,7 +416,7 @@ router.post('/challenges/create', (req, res) => {
   const result = db.prepare(`
     INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status, challenge_type)
     VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
-  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null, challenge_type || 'doubles');
+  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Bữa sáng', reward_detail || null, challenge_type || 'doubles');
 
   [team.captain_id, opponent.captain_id].forEach(captainId => {
     db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
@@ -338,7 +426,7 @@ router.post('/challenges/create', (req, res) => {
     );
   });
 
-  log(req.session.user.id, 'admin_create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'} · ${challenge_type || 'doubles'}`, req.headers['x-forwarded-for'] || req.connection.remoteAddress);
+  log(req.session.user.id, 'admin_create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Bữa sáng'} · ${challenge_type || 'doubles'}`, req.headers['x-forwarded-for'] || req.connection.remoteAddress);
   req.session.flash = { type: 'success', message: 'Đã tạo thách đấu!' };
   res.redirect('/admin/challenges');
 });

@@ -925,7 +925,7 @@ a:hover { color: var(--primary-dark); }
 }
 .search-results.show { display: block; }
 .search-result-item { padding: 0.6rem 0.85rem; cursor: pointer; font-size: 0.9rem; transition: background var(--transition); color: var(--text); }
-.search-result-item:hover { background: var(--gray-100); }
+.search-result-item:hover, .search-result-item.active { background: var(--gray-100); }
 
 .selected-teammate {
   display: inline-flex;
@@ -1197,6 +1197,7 @@ a:hover { color: var(--primary-dark); }
 .admin-winner-options { display: flex; gap: 1rem; flex-wrap: wrap; }
 .admin-winner-option { flex: 1; min-width: 140px; }
 .admin-winner-option input { display: none; }
+.admin-winner-card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .admin-winner-card { display: block; padding: 1rem; text-align: center; border: 1.5px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; background: #fff; transition: var(--transition); }
 .admin-winner-option input:checked + .admin-winner-card { border-color: var(--primary); background: #f0fdf4; }
 .admin-winner-card:hover { border-color: var(--primary); }

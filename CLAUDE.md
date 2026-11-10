@@ -28,10 +28,19 @@ bash deploy-frontend.sh  # chỉ CSS + views
 ```
 
 Backup / restore database (bind mount `./data`, không cần vào container):
+```
+# Dùng sqlite3 backup API qua container
+  docker exec pick-club node -e "
+  const Database = require('better-sqlite3');
+  const db = new Database('/app/data/club.db');
+  db.backup('/app/data/club-backup.db').then(() => console.log('done'));
+  "
+```
 ```bash
 cp data/club.db ./club-backup.db      # backup
 cp ./club-backup.db data/club.db      # restore (nên dừng container trước khi ghi đè)
 ```
+
 
 ## Architecture
 
@@ -58,7 +67,7 @@ Node.js/Express + EJS server-rendered views + SQLite (better-sqlite3). Docker de
 | `routes/auth.js` | `/` | Login/logout, đổi mật khẩu, export `requireAuth` middleware |
 | `routes/teams.js` | `/teams` | Danh sách đội (với avatar thành viên), tạo đội redirect admin |
 | `routes/challenges.js` | `/challenges` | Tạo thách đấu (status `scheduled` ngay), người chơi gửi kết quả |
-| `routes/api.js` | `/api` | JSON API: tìm user, notifications, kết quả hôm nay, tạo thách đấu, admin nhập kết quả |
+| `routes/api.js` | `/api` | JSON API: tìm user, notifications, kết quả theo ngày, tạo thách đấu, gửi/admin nhập kết quả |
 | `routes/admin.js` | `/admin` | Quản trị: chốt kết quả, tạo đội, quản lý thành viên, nhật ký |
 | `routes/logger.js` | — | Module `log(userId, action, detail, ip)` ghi activity_logs |
 
@@ -105,7 +114,9 @@ Tạo thách đấu → `scheduled` (ngay lập tức, không cần accept) → 
 | POST | `/api/notifications/:id/read` | required | Đánh dấu đã đọc |
 | GET | `/api/fund` | public | Tổng quỹ bữa sáng, tùy chọn lọc `?m=1-12&y=YYYY` |
 | GET | `/api/results/today` | public | Các trận `completed` có `match_date = hôm nay` |
+| GET | `/api/results?date=YYYY-MM-DD` | public | Tra cứu kết quả theo ngày (mặc định = hôm nay nếu không truyền `date`) |
 | POST | `/api/challenges` | required | Tạo thách đấu mới (JSON: `challenger_team_id`, `challenged_team_id`, `match_date`, `match_time`, `reward`, `reward_detail`) — status `scheduled` ngay |
+| POST | `/api/challenges/:id/result` | required | Người chơi gửi kết quả trận đấu (JSON: `scores`, `winner_team_id`) — chỉ ghi nhận, không chuyển `completed`, admin chốt sau |
 | POST | `/api/admin/challenges/:id/result` | admin | Nhập/sửa kết quả trận đấu trực tiếp (JSON: `scores`, `winner_team_id`, `reward_paid`) — không cần đội chơi gửi trước, chốt thẳng `completed` |
 
 **Auth cho API `required`/`admin`**: dùng session cookie (`connect.sid`) — đăng nhập qua `POST /login` (form `username`, `password`) trước, curl cần `-c cookies.txt` để lưu và `-b cookies.txt` để gửi lại cookie ở các request sau. Không có API token riêng.
@@ -131,6 +142,25 @@ curl -b cookies.txt -X POST http://localhost:3000/api/admin/challenges/4/result 
 Lỗi: 400 thiếu `scores` / `winner_team_id` không thuộc trận đấu, 404 challenge không tồn tại, 401/403 nếu chưa đăng nhập hoặc không phải admin. `winner_team_id` bỏ trống = hòa. Ghi đè toàn bộ `match_results` cũ của trận, không cần đội chơi gửi kết quả trước.
 
 **Lưu ý encoding trên Windows/Git Bash**: truyền chuỗi tiếng Việt qua `curl -d '...'` trong Git Bash có thể bị hỏng encoding tùy codepage terminal — nếu gặp dữ liệu tiếng Việt bị lỗi sau khi lưu, kiểm tra bằng cách gửi request qua Node `http` (UTF-8 mặc định) thay vì curl để loại trừ nguyên nhân do shell.
+
+**Tra cứu kết quả theo ngày — `GET /api/results`**
+```bash
+curl http://localhost:3000/api/results?date=2026-08-01
+# -> 200 { date: "2026-08-01", totalFund: 42, results: [...] }
+
+curl http://localhost:3000/api/results
+# -> 200 (mặc định = hôm nay)
+```
+Lỗi: 400 nếu `date` sai định dạng (phải `YYYY-MM-DD`). Không cần đăng nhập.
+
+**Người chơi gửi kết quả — `POST /api/challenges/:id/result`**
+```bash
+curl -b cookies.txt -X POST http://localhost:3000/api/challenges/4/result \
+  -H "Content-Type: application/json" \
+  -d '{"scores":"11-7, 9-11, 11-8","winner_team_id":1}'
+# -> 201 { ok: true, result: { challenge_id, reporter_team_id, scores, winner_team_id } }
+```
+Lỗi: 400 thiếu `scores` / `winner_team_id` không thuộc trận / trận không ở status `accepted`/`scheduled`, 403 user không thuộc đội nào trong trận, 404 challenge không tồn tại, 409 đội đã gửi kết quả rồi, 401 chưa đăng nhập. `winner_team_id` bỏ trống = hòa. Chỉ ghi nhận kết quả từ đội — admin chốt sau qua `/api/admin/challenges/:id/result`.
 
 ### Static Files
 

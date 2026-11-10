@@ -1,0 +1,149 @@
+<%- include('../../partials/header', { title: 'Sửa giải đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Sửa giải đấu</h1>
+    <a href="/admin/tournament-events" class="btn btn-outline btn-sm">← Thông tin giải đấu</a>
+  </div>
+
+  <div class="form-card">
+    <form action="/admin/tournament-events/<%= event.id %>/edit" method="POST">
+      <div class="form-group">
+        <label for="name" class="form-label">Tên giải đấu *</label>
+        <input type="text" id="name" name="name" class="form-input" value="<%= event.name %>" required>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+        <div class="form-group">
+          <label for="event_date" class="form-label">Ngày</label>
+          <input type="date" id="event_date" name="event_date" class="form-input" value="<%= event.event_date || '' %>">
+        </div>
+        <div class="form-group">
+          <label for="event_time" class="form-label">Giờ</label>
+          <input type="time" id="event_time" name="event_time" class="form-input" value="<%= event.event_time || '' %>">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="location" class="form-label">Địa điểm</label>
+        <input type="text" id="location" name="location" class="form-input" value="<%= event.location || '' %>">
+      </div>
+
+      <div class="form-group">
+        <label for="status" class="form-label">Trạng thái</label>
+        <select id="status" name="status" class="form-input">
+          <% Object.keys(statusLabels).forEach(function(s) { %>
+            <option value="<%= s %>" <%= event.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Đội tham gia — đã chọn <span id="selectedTeamCount">0</span> đội</label>
+        <div class="participant-checklist">
+          <% teams.forEach(function(t) { %>
+            <label class="admin-checkbox">
+              <input type="checkbox" name="teams" value="<%= t.id %>" class="team-check"
+                <%= selectedTeamIds.includes(t.id) ? 'checked' : '' %>>
+              <span><%= t.name %> <% if (t.member_names) { %><span class="text-muted text-sm">(<%= t.member_names %>)</span><% } %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="rules" class="form-label">Điều lệ giải</label>
+        <textarea id="rules" name="rules" class="form-input" rows="6"><%= event.rules || '' %></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="prizes" class="form-label">Giải thưởng</label>
+        <textarea id="prizes" name="prizes" class="form-input" rows="4"><%= event.prizes || '' %></textarea>
+      </div>
+
+      <h3 style="margin-top:1.5rem; margin-bottom:0.75rem">Kết quả</h3>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem">
+        <div class="form-group">
+          <label for="champion_team_id" class="form-label">🥇 Vô địch</label>
+          <select id="champion_team_id" name="champion_team_id" class="form-input result-select">
+            <option value="">-- Chưa có --</option>
+            <% eventTeams.forEach(function(t) { %>
+              <option value="<%= t.id %>" <%= event.champion_team_id === t.id ? 'selected' : '' %>><%= t.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="runner_up_team_id" class="form-label">🥈 Hạng 2</label>
+          <select id="runner_up_team_id" name="runner_up_team_id" class="form-input result-select">
+            <option value="">-- Chưa có --</option>
+            <% eventTeams.forEach(function(t) { %>
+              <option value="<%= t.id %>" <%= event.runner_up_team_id === t.id ? 'selected' : '' %>><%= t.name %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="third_place_team_id" class="form-label">🥉 Hạng 3</label>
+          <select id="third_place_team_id" name="third_place_team_id" class="form-input result-select">
+            <option value="">-- Chưa có --</option>
+            <% eventTeams.forEach(function(t) { %>
+              <option value="<%= t.id %>" <%= event.third_place_team_id === t.id ? 'selected' : '' %>><%= t.name %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/admin/tournament-events" class="btn btn-outline">Hủy</a>
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.participant-checklist {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+}
+.participant-checklist .admin-checkbox { padding: 0.4rem 0; border-bottom: 1px solid var(--line); }
+.participant-checklist .admin-checkbox:last-child { border-bottom: none; }
+</style>
+
+<script>
+(function() {
+  var checks = document.querySelectorAll('.team-check');
+  var counter = document.getElementById('selectedTeamCount');
+  function update() {
+    counter.textContent = document.querySelectorAll('.team-check:checked').length;
+  }
+  checks.forEach(function(c) { c.addEventListener('change', update); });
+  update();
+
+  var selects = document.querySelectorAll('.result-select');
+  selects.forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var selected = {};
+      selects.forEach(function(s) {
+        if (s.value) selected[s.id] = s.value;
+      });
+      selects.forEach(function(s) {
+        Array.from(s.options).forEach(function(opt) {
+          if (!opt.value) return;
+          var usedByOther = false;
+          Object.keys(selected).forEach(function(key) {
+            if (key !== s.id && selected[key] === opt.value) usedByOther = true;
+          });
+          opt.disabled = usedByOther;
+        });
+      });
+    });
+  });
+  selects[0] && selects[0].dispatchEvent(new Event('change'));
+})();
+</script>
+
+<%- include('../../partials/footer') %>

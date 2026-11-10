@@ -1,0 +1,103 @@
+<%- include('../partials/header', { title: event.name, user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1><%= event.name %></h1>
+      <span class="badge badge-<%= event.status %>" style="margin-top:0.5rem; display:inline-block"><%= statusLabels[event.status] || event.status %></span>
+    </div>
+    <a href="/tournament/events" class="btn btn-outline btn-sm">← Danh sách giải đấu</a>
+  </div>
+
+  <div class="info-cards" style="margin-bottom:1.5rem">
+    <% if (event.event_date) { %>
+    <div class="info-card">
+      <h3>Thời gian</h3>
+      <p class="info-card-value"><%= event.event_date.split('-').reverse().join('/') %></p>
+      <% if (event.event_time) { %><p class="info-card-label"><%= event.event_time %></p><% } %>
+    </div>
+    <% } %>
+    <% if (event.location) { %>
+    <div class="info-card">
+      <h3>Địa điểm</h3>
+      <p class="info-card-value"><%= event.location %></p>
+    </div>
+    <% } %>
+    <div class="info-card">
+      <h3>Số đội</h3>
+      <p class="info-card-value"><%= teams.length %></p>
+      <p class="info-card-label">đội tham gia</p>
+    </div>
+  </div>
+
+  <% if (event.status === 'completed' && (event.champion_name || event.runner_up_name || event.third_place_name)) { %>
+  <div class="card" style="margin-bottom:1.5rem; padding:1.25rem">
+    <h2 style="margin-bottom:1rem">Kết quả</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem">
+      <% if (event.champion_name) { %>
+      <div style="text-align:center; padding:1rem; background:var(--surface); border-radius:var(--radius-sm)">
+        <div style="font-size:2rem">🥇</div>
+        <div style="font-weight:700; margin-top:0.25rem"><%= event.champion_name %></div>
+        <div class="text-muted text-sm">Vô địch</div>
+      </div>
+      <% } %>
+      <% if (event.runner_up_name) { %>
+      <div style="text-align:center; padding:1rem; background:var(--surface); border-radius:var(--radius-sm)">
+        <div style="font-size:2rem">🥈</div>
+        <div style="font-weight:700; margin-top:0.25rem"><%= event.runner_up_name %></div>
+        <div class="text-muted text-sm">Hạng 2</div>
+      </div>
+      <% } %>
+      <% if (event.third_place_name) { %>
+      <div style="text-align:center; padding:1rem; background:var(--surface); border-radius:var(--radius-sm)">
+        <div style="font-size:2rem">🥉</div>
+        <div style="font-weight:700; margin-top:0.25rem"><%= event.third_place_name %></div>
+        <div class="text-muted text-sm">Hạng 3</div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (teams.length > 0) { %>
+  <div class="card" style="margin-bottom:1.5rem; padding:1.25rem">
+    <h2 style="margin-bottom:1rem">Đội tham gia</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên đội</th>
+            <th>Thành viên</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% teams.forEach(function(t, i) { %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <td><strong><%= t.name %></strong></td>
+            <td><%= t.member_names || '-' %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (event.rules) { %>
+  <div class="card" style="margin-bottom:1.5rem; padding:1.25rem">
+    <h2 style="margin-bottom:1rem">Điều lệ giải</h2>
+    <div style="white-space:pre-wrap; line-height:1.7"><%= event.rules %></div>
+  </div>
+  <% } %>
+
+  <% if (event.prizes) { %>
+  <div class="card" style="margin-bottom:1.5rem; padding:1.25rem">
+    <h2 style="margin-bottom:1rem">Giải thưởng</h2>
+    <div style="white-space:pre-wrap; line-height:1.7"><%= event.prizes %></div>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

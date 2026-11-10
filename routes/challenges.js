@@ -142,7 +142,7 @@ router.post('/create', (req, res) => {
   const result = db.prepare(`
     INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status, challenge_type)
     VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
-  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null, challenge_type || 'doubles');
+  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Bữa sáng', reward_detail || null, challenge_type || 'doubles');
 
   [team.captain_id, opponent.captain_id].forEach(captainId => {
     db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
@@ -153,7 +153,7 @@ router.post('/create', (req, res) => {
   });
 
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
+  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
   req.session.flash = { type: 'success', message: 'Đã lên lịch trận đấu!' };
   res.redirect('/challenges');
 });

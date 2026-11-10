@@ -61,6 +61,29 @@ router.get('/users/search', (req, res) => {
   res.json(users);
 });
 
+// Search teams
+router.get('/teams/search', (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
+
+  const q = req.query.q || '';
+  if (q.length < 1) return res.json([]);
+
+  const teams = db.prepare(`
+    SELECT t.id, t.name,
+      GROUP_CONCAT(u.full_name, ', ') as member_names
+    FROM teams t
+    JOIN team_members tm ON tm.team_id = t.id AND tm.status = 'accepted'
+    JOIN users u ON u.id = tm.user_id
+    WHERE t.status = 'active' AND t.is_singles = 0
+      AND (t.name LIKE ? OR u.full_name LIKE ?)
+    GROUP BY t.id
+    ORDER BY t.name
+    LIMIT 10
+  `).all(`%${q}%`, `%${q}%`);
+
+  res.json(teams);
+});
+
 // Get unread notifications
 router.get('/notifications', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
@@ -138,6 +161,115 @@ router.get('/results/today', (req, res) => {
   res.json({ date: today, totalFund: fund.totalFund, results });
 });
 
+// Get results by date — default today
+router.get('/results', (req, res) => {
+  const dateParam = req.query.date || new Date().toISOString().slice(0, 10);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+    return res.status(400).json({ error: 'Ngày không hợp lệ. Dùng định dạng YYYY-MM-DD' });
+  }
+
+  const results = db.prepare(`
+    SELECT c.id, c.match_date, c.match_time, c.reward,
+      t1.name AS challenger_name,
+      t2.name AS challenged_name,
+      tw.name AS winner_name,
+      mr.scores
+    FROM challenges c
+    JOIN teams t1 ON c.challenger_team_id = t1.id
+    JOIN teams t2 ON c.challenged_team_id = t2.id
+    LEFT JOIN match_results mr ON mr.challenge_id = c.id
+    LEFT JOIN teams tw ON tw.id = mr.winner_team_id
+    WHERE c.status = 'completed' AND c.match_date = ?
+    ORDER BY c.match_time
+  `).all(dateParam);
+
+  const fund = db.prepare(`
+    SELECT COALESCE(SUM(
+      CASE WHEN mr.winner_team_id IS NOT NULL AND mr.winner_team_id != tm.team_id THEN 1 ELSE 0 END
+    ), 0) AS totalFund
+    FROM team_members tm
+    JOIN challenges c ON (c.challenger_team_id = tm.team_id OR c.challenged_team_id = tm.team_id)
+      AND c.status = 'completed'
+    JOIN match_results mr ON mr.challenge_id = c.id
+    WHERE tm.status = 'accepted'
+  `).get();
+
+  res.json({ date: dateParam, totalFund: fund.totalFund, results });
+});
+
+// Team member submits match result
+router.post('/challenges/:id/result', requireAuthApi, (req, res) => {
+  const challengeId = req.params.id;
+  const { scores, winner_team_id } = req.body;
+  const userId = req.session.user.id;
+
+  if (!scores || !String(scores).trim()) {
+    return res.status(400).json({ error: 'Thiếu tỉ số trận đấu' });
+  }
+
+  const challenge = db.prepare('SELECT * FROM challenges WHERE id = ?').get(challengeId);
+  if (!challenge) {
+    return res.status(404).json({ error: 'Thách đấu không tồn tại' });
+  }
+  if (!['accepted', 'scheduled'].includes(challenge.status)) {
+    return res.status(400).json({ error: 'Không thể gửi kết quả cho trận đấu này' });
+  }
+
+  const userTeam = db.prepare(`
+    SELECT tm.team_id AS id FROM team_members tm
+    WHERE tm.user_id = ? AND tm.status = 'accepted' AND tm.team_id IN (?, ?)
+  `).get(userId, challenge.challenger_team_id, challenge.challenged_team_id);
+
+  if (!userTeam) {
+    return res.status(403).json({ error: 'Bạn không thuộc đội nào trong trận đấu này' });
+  }
+
+  let winnerId = null;
+  if (winner_team_id !== undefined && winner_team_id !== null && winner_team_id !== '') {
+    winnerId = Number(winner_team_id);
+    if (![challenge.challenger_team_id, challenge.challenged_team_id].includes(winnerId)) {
+      return res.status(400).json({ error: 'Đội thắng không thuộc trận đấu này' });
+    }
+  }
+
+  const existing = db.prepare(
+    'SELECT id FROM match_results WHERE challenge_id = ? AND reporter_team_id = ?'
+  ).get(challengeId, userTeam.id);
+  if (existing) {
+    return res.status(409).json({ error: 'Đội bạn đã gửi kết quả rồi' });
+  }
+
+  db.prepare(
+    'INSERT INTO match_results (challenge_id, reporter_team_id, scores, winner_team_id) VALUES (?, ?, ?, ?)'
+  ).run(challengeId, userTeam.id, scores, winnerId);
+
+  const admins = db.prepare('SELECT id FROM users WHERE is_admin = 1').all();
+  const t1 = db.prepare('SELECT name FROM teams WHERE id = ?').get(challenge.challenger_team_id);
+  const t2 = db.prepare('SELECT name FROM teams WHERE id = ?').get(challenge.challenged_team_id);
+  const reporterTeam = db.prepare('SELECT name FROM teams WHERE id = ?').get(userTeam.id);
+  admins.forEach(a => {
+    db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
+      a.id, 'result_submitted',
+      `Đội "${reporterTeam.name}" đã gửi kết quả trận ${t1.name} vs ${t2.name}. Chờ admin xác nhận.`,
+      `/admin/challenges/${challengeId}`
+    );
+  });
+
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  log(userId, 'submit_result', `Trận #${challengeId} · ${scores} · Đội thắng: ${winnerId || 'Hòa'}`, ip);
+
+  res.status(201).json({
+    ok: true,
+    result: {
+      challenge_id: Number(challengeId),
+      reporter_team_id: userTeam.id,
+      scores,
+      winner_team_id: winnerId
+    }
+  });
+});
+
 // Tạo thách đấu mới
 router.post('/challenges', requireAuthApi, (req, res) => {
   const { challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, challenge_type, challenger_user_id, challenged_user_id } = req.body;
@@ -180,7 +312,7 @@ router.post('/challenges', requireAuthApi, (req, res) => {
   const result = db.prepare(`
     INSERT INTO challenges (challenger_team_id, challenged_team_id, match_date, match_time, reward, reward_detail, status, challenge_type)
     VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
-  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Một bữa sáng', reward_detail || null, challenge_type || 'doubles');
+  `).run(challengerTeamId, challengedTeamId, match_date, match_time, reward || 'Bữa sáng', reward_detail || null, challenge_type || 'doubles');
 
   [team.captain_id, opponent.captain_id].forEach(captainId => {
     db.prepare('INSERT INTO notifications (user_id, type, message, link) VALUES (?, ?, ?, ?)').run(
@@ -191,7 +323,7 @@ router.post('/challenges', requireAuthApi, (req, res) => {
   });
 
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Một bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
+  log(req.session.user.id, 'create_challenge', `${team.name} vs ${opponent.name} · ${match_date} ${match_time} · ${reward || 'Bữa sáng'} · ${challenge_type || 'doubles'}`, ip);
 
   res.status(201).json({
     ok: true,

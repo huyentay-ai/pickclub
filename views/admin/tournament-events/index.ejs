@@ -1,0 +1,53 @@
+<%- include('../../partials/header', { title: 'Thông tin giải đấu', user: typeof user !== 'undefined' ? user : null, flash: typeof flash !== 'undefined' ? flash : null }) %>
+
+<div class="container">
+  <div class="page-header page-header-with-action">
+    <div>
+      <h1>🏅 Thông tin giải đấu</h1>
+      <a href="/admin" class="btn btn-outline btn-sm" style="margin-top:0.5rem">← Quản trị</a>
+    </div>
+    <a href="/admin/tournament-events/create" class="btn btn-primary">+ Tạo giải đấu</a>
+  </div>
+
+  <% if (events.length > 0) { %>
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên giải</th>
+            <th>Thời gian</th>
+            <th>Địa điểm</th>
+            <th>Số đội</th>
+            <th>Trạng thái</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% events.forEach(function(e) { %>
+          <tr>
+            <td><%= e.id %></td>
+            <td><strong><%= e.name %></strong></td>
+            <td><%= e.event_date || '-' %> <% if (e.event_time) { %><%= e.event_time %><% } %></td>
+            <td><%= e.location || '-' %></td>
+            <td><%= e.team_count %></td>
+            <td><span class="badge badge-<%= e.status %>"><%= statusLabels[e.status] || e.status %></span></td>
+            <td>
+              <a href="/admin/tournament-events/<%= e.id %>/edit" class="btn btn-sm btn-outline">Sửa</a>
+              <form action="/admin/tournament-events/<%= e.id %>/delete" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-outline" style="color:var(--danger)" onclick="return confirm('Xóa giải đấu ' + <%- JSON.stringify(e.name) %> + '?')">Xóa</button>
+              </form>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p>Chưa có giải đấu nào. Hãy tạo giải đầu tiên!</p>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../../partials/footer') %>
